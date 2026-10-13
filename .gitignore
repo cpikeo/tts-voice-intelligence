@@ -8,3 +8,13 @@ out/
 *.flac
 *.ogg
 !tests/**/*.wav
+# 用户模型、授权原件与声纹资产不得提交
+*.onnx
+*.onnx.json
+*.pth
+*.pt
+*.safetensors
+*.bin
+private/
+authorization*.json
+!assets/authorization.example.json

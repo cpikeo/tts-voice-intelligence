@@ -1,0 +1,47 @@
+{
+  "python": "3.13.16 (main, Oct  6 2026, 04:38:44) [GCC 14.2.0]",
+  "platform": "Linux-6.1.158+-x86_64-with-glibc2.41",
+  "packages": {
+    "numpy": "2.3.5",
+    "soundfile": "0.13.1",
+    "piper-tts": "1.8.0",
+    "onnxruntime": "1.31.0",
+    "pytest": "9.0.3",
+    "faster-whisper": "1.2.1",
+    "ctranslate2": "4.8.2",
+    "scipy": "1.17.1",
+    "opencc-python-reimplemented": "0.1.7",
+    "av": "19.0.1"
+  },
+  "cpu_quota": "not exposed",
+  "memory_max_bytes": "not exposed",
+  "espeak_ng": "1.52.0",
+  "physical_memory_observed": "approximately 1982 MiB from free -m; quota not exposed",
+  "real_xtts": "not_installed/no_authorized_reference_or_weights",
+  "asr_assets": [
+    {
+      "file": "tokenizer.json",
+      "revision": "ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66",
+      "bytes": 2203239,
+      "sha256": "fb7b63191e9bb045082c79fd742a3106a12c99513ab30df4a0d47fa6cb6fd0ab"
+    },
+    {
+      "file": "vocabulary.txt",
+      "revision": "ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66",
+      "bytes": 459861,
+      "sha256": "34ce3fe1c5041027b3f8d42912270993f986dbc4bb34cf27f951e34a1e453913"
+    },
+    {
+      "file": "model.bin",
+      "revision": "ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66",
+      "bytes": 145217532,
+      "sha256": "d01c3014881c9c6f3133c182f3d2887eb6ca1c789a7538c5c007196857a0a6a9"
+    },
+    {
+      "file": "config.json",
+      "revision": "ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66",
+      "bytes": 2309,
+      "sha256": "56a6d8110d311f19c8f0471e562832c7527f146b567275bfca59fcf7c184da9a"
+    }
+  ]
+}

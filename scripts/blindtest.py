@@ -1,35 +1,10 @@
 #!/usr/bin/env python3
-"""轻量盲听评测（人类听评）——客观信号检查与 ASR 不能替代人耳。
-
-三步：
-  prepare  把音频复制成匿名样本，生成记分表（记分表里不出现原始文件名）
-  score    汇总已填写的记分表
-  unblind  评完之后再揭示样本与原始文件的对应关系
-
-用法：
-  python scripts/blindtest.py prepare --audio a.wav b.wav --out pkg --seed 7
-  # 人工试听 pkg/listen/*.wav 并填写 pkg/ratings.csv（1–5 分，5 最好）
-  python scripts/blindtest.py score   --pkg pkg
-  python scripts/blindtest.py unblind --pkg pkg
-
-设计要点：
-- 可重复：同一 --seed 必得同一套匿名编号与试听顺序，结果可跨轮次比较。
-- 真盲：记分表与试听文件名只含匿名标签；对应关系只在 blind_map.json 里，
-  评完再 unblind，避免“知道是哪个引擎”带来的期望偏差。
-- 只做记录与汇总，不做任何主观判断的自动化替代。
-
-评分维度（1–5 分）：
-  accuracy 发音准确度 | naturalness 自然度 | prosody 韵律 | expressiveness 表现力
-  timbre_consistency 音色一致性 | continuity 段间连续性
-
-依赖：仅标准库。
-"""
+"""Anonymous human-rating packages; never generates subjective scores."""
 import argparse
 import csv
 import hashlib
 import json
 import random
-import shutil
 import sys
 from pathlib import Path
 
@@ -83,16 +58,23 @@ def cmd_prepare(args):
         raise SystemExit(f"样本过多（{len(files)} 个）。盲听听评一轮建议不超过 30 个，"
                          f"否则评分质量会下降；请分批。")
     pkg = Path(args.out)
+    if pkg.exists() and any(pkg.iterdir()):
+        raise SystemExit("包目录非空；拒绝覆盖评分与旧试听样本")
     listen = pkg / "listen"
     listen.mkdir(parents=True, exist_ok=True)
     items = assign_labels(files, args.seed)
     for it in items:
         dst = listen / f"{it['label']}{Path(it['source']).suffix.lower()}"
-        shutil.copy2(it["source"], dst)
+        # Re-encode to strip identifying container metadata.
+        import soundfile as sf
+        audio, sr = sf.read(it["source"], dtype="float32", always_2d=True)
+        sf.write(dst, audio, sr)
         it["listen_file"] = dst.name
     (pkg / "blind_map.json").write_text(
         json.dumps({"seed": args.seed, "items": items}, ensure_ascii=False, indent=2),
         encoding="utf-8")
+    (pkg / "blind_map.json").chmod(0o600)
+    (listen / "order.txt").write_text("\n".join(it["listen_file"] for it in items) + "\n", encoding="utf-8")
     sheet = pkg / "ratings.csv"
     with sheet.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
@@ -101,7 +83,7 @@ def cmd_prepare(args):
             w.writerow([it["label"]] + [""] * len(DIMS) + [""])
     (pkg / "README.txt").write_text(
         "盲听听评说明\n"
-        "1. 按 blind_map.json 里的 order 顺序试听 listen/ 下的匿名样本。\n"
+        "1. 按 listen/order.txt 试听；只向评员发 listen/ 与 ratings.csv，不发映射。\n"
         "2. 在 ratings.csv 中为每个样本打 1–5 分（5 最好），不要修改 sample 列。\n"
         "   " + " | ".join(f"{d}={DIM_ZH[d]}" for d in DIMS) + "\n"
         "3. 音色一致性与段间连续性请听完整个样本再评；样本应是完整的段落序列。\n"
@@ -137,6 +119,11 @@ def _read_sheet(pkg):
                 scores[d] = fv
             rows.append({"sample": r["sample"].strip(), "scores": scores,
                          "missing": missing, "comment": (r.get("comment") or "").strip()})
+    mapping = json.loads((Path(pkg) / "blind_map.json").read_text(encoding="utf-8"))
+    labels = [r["sample"] for r in rows]
+    expected = {it["label"] for it in mapping["items"]}
+    if len(labels) != len(set(labels)) or set(labels) != expected:
+        raise SystemExit("评分标签重复、遗漏或未知")
     return rows
 
 
@@ -151,12 +138,15 @@ def cmd_score(args):
         per_sample.append({"sample": r["sample"], **r["scores"],
                            "mean": round(sum(vals) / len(vals), 3),
                            "missing": r["missing"], "comment": r["comment"]})
-    dim_mean = {d: round(sum(r["scores"][d] for r in scored if d in r["scores"])
-                         / max(1, sum(1 for r in scored if d in r["scores"])), 3) for d in DIMS}
+    counts = {d: sum(d in r["scores"] for r in scored) for d in DIMS}
+    dim_mean = {d: round(sum(r["scores"][d] for r in scored if d in r["scores"]) / counts[d], 3)
+                if counts[d] else None for d in DIMS}
     overall = round(sum(r["mean"] for r in per_sample) / len(per_sample), 3)
     out = {"package": str(args.pkg), "n_samples": len(rows), "n_scored": len(scored),
            "per_sample": sorted(per_sample, key=lambda r: r["sample"]),
-           "dimension_mean": dim_mean, "overall_mean": overall}
+           "dimension_mean": dim_mean, "dimension_n": counts, "overall_mean": overall,
+           "complete": all(not r["missing"] for r in rows),
+           "evidence_type": "human_entered_not_automatically_verified"}
     (Path(args.pkg) / "scores.json").write_text(json.dumps(out, ensure_ascii=False, indent=2),
                                                 encoding="utf-8")
     lines = ["| 样本 | " + " | ".join(DIM_ZH[d] for d in DIMS) + " | 均值 | 备注 |",
@@ -166,7 +156,7 @@ def cmd_score(args):
         lines.append(f"| {r['sample']} | " + " | ".join(cells) +
                      f" | {r['mean']:.2f} | {r['comment']} |")
     lines.append("")
-    lines.append("维度均值：" + "，".join(f"{DIM_ZH[d]} {dim_mean[d]:.2f}" for d in DIMS))
+    lines.append("维度均值：" + "，".join(f"{DIM_ZH[d]} {dim_mean[d] if dim_mean[d] is not None else '未评分'}" for d in DIMS))
     lines.append(f"总均值 {overall:.2f}（已评分 {len(scored)}/{len(rows)} 个样本）")
     (Path(args.pkg) / "scores.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
@@ -177,6 +167,9 @@ def cmd_unblind(args):
     mp = Path(args.pkg) / "blind_map.json"
     if not mp.is_file():
         raise SystemExit(f"找不到映射文件：{mp}（先运行 prepare）")
+    rows = _read_sheet(args.pkg)
+    if not rows or any(r["missing"] for r in rows):
+        raise SystemExit("评分未完整，拒绝揭盲")
     mapping = json.loads(mp.read_text(encoding="utf-8"))
     scores = {}
     sp = Path(args.pkg) / "scores.json"

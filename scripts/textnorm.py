@@ -1,13 +1,4 @@
-"""中文为主的朗读文本规范化（引擎无关）。
-
-只处理引擎前端容易读错的形态：日期、年份、时刻、百分比、小数、整数、编号与部分符号。
-不做语义改写；调用方应同时保留原文与规范化文本（见 tts.py 的 report）。
-
-设计约定：
-- 词典条目先于一切规则替换，并用哨兵占位保护，因此**词典给出的朗读形式是最终形式**，
-  不会被后续的数字规则二次改写。
-- 规则顺序不可随意调换（日期 -> 年份 -> 时刻 -> 编号 -> 亿/万 -> 百分比 -> 负号 -> 其余数字）。
-"""
+"""Conservative locale-aware normalization; lexicon readings are final."""
 import re
 import unicodedata
 
@@ -134,6 +125,8 @@ def normalize_zh(text: str, lexicon=None) -> str:
     # 1. 日期 2026/10/12、2026-10-12（必须早于年份与负号规则，否则只剩分隔符）
     def _date(m):
         y, mo, d = m.group(1), int(m.group(2)), int(m.group(3))
+        from datetime import date
+        date(int(y), mo, d)  # Reject invalid dates rather than confidently reading them
         return f"{digits_zh(y)}年{int_zh(mo)}月{int_zh(d)}日"
     t = re.sub(r"(?<!\d)(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})(?!\d)", _date, t)
     # 2. 带“亿/万”单位的数量（1亿2000万 -> 一亿二千万）
@@ -145,6 +138,8 @@ def normalize_zh(text: str, lexicon=None) -> str:
     # 4. 时刻 HH:MM
     def _time(m):
         h, mi = int(m.group(1)), int(m.group(2))
+        if h > 23 or mi > 59:
+            raise ValueError("无效时刻；比值/其他冒号表达请先改写")
         if mi == 0:
             return f"{int_zh(h)}点整"
         prefix = "零" if mi < 10 else ""
@@ -153,9 +148,6 @@ def normalize_zh(text: str, lexicon=None) -> str:
     # 4. 编号/型号（A-1024、GPT-4）：数字逐位读，不做数值读法
     t = re.sub(r"(?<![A-Za-z0-9])([A-Za-z]{1,10})-(\d+)(?![A-Za-z0-9])",
                lambda m: f"{m.group(1)}-{digits_zh(m.group(2))}", t)
-    # 5. 带“亿/万”单位的数量（1亿2000万 -> 一亿二千万）
-    t = re.sub(r"(\d+(?:\.\d+)?)\s*([亿万])",
-               lambda m: _num(m.group(1)) + m.group(2), t)
     # 6. 百分比
     t = re.sub(r"(\d+(?:\.\d+)?)\s*%", lambda m: "百分之" + _num(m.group(1)), t)
     # 7. 负号（不触碰范围 10-20 与已处理完的日期）
@@ -168,3 +160,48 @@ def normalize_zh(text: str, lexicon=None) -> str:
     for tok, dst in guards:  # 最后还原词典朗读形式
         t = t.replace(tok, dst)
     return t.strip()
+
+
+def detect_language(text):
+    """Script heuristic, NOT reliable language/accent identification."""
+    if re.search(r"[\u3040-\u30ff]", text):
+        return "ja"
+    if re.search(r"[\uac00-\ud7af]", text):
+        return "ko"
+    if re.search(r"[\u4e00-\u9fff]", text):
+        return "zh"
+    if re.search(r"[A-Za-z]", text):
+        return "en"  # ambiguous for other Latin-script languages; prefer explicit tag
+    return "und"
+
+
+def normalize_text(text, language="zh", lexicon=None):
+    """Chinese deterministic rules; other locales retain engine frontend semantics.
+
+    No forced transliteration or inferred pronunciation for mixed-language spans.
+    """
+    lang = language.replace("_", "-").lower()
+    if lang == "auto":
+        lang = detect_language(text)
+    if lang == "zh" or lang.startswith("zh-") or lang == "cmn":
+        return normalize_zh(text, lexicon)
+    t = text
+    # Simultaneous substitution prevents replacement cascades; readings are final.
+    if lexicon:
+        pairs = sorted(lexicon, key=lambda p: -len(p[0]))
+        forms = {src.casefold(): dst for src, dst in pairs}
+        pattern = "|".join((r"(?<![A-Za-z0-9])" + re.escape(src) + r"(?![A-Za-z0-9])")
+                           if src.isascii() else re.escape(src) for src, _ in pairs)
+        t = re.sub(pattern, lambda m: forms[m[0].casefold()], t, flags=re.I)
+    return re.sub(r"[ \t]+", " ", t).strip()
+
+
+def text_warnings(text, language):
+    warnings = []
+    if re.search(r"\d+[-/]\d+(?!\d)", text) or re.search(r"\d{7,}", text):
+        warnings.append("数字范围/日期/长编号需人工确认读法，不保证语境正确")
+    if re.search(r"[\u4e00-\u9fff]", text) and re.search(r"[A-Za-z]", text):
+        warnings.append("混合语言需逐专名复核；不保证跨语言音色或发音稳定")
+    if language == "auto":
+        warnings.append("自动语言仅脚本启发式；拉丁文字无法可靠区分语言或口音")
+    return warnings

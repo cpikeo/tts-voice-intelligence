@@ -1,0 +1,3128 @@
+[
+  {
+    "id": "digits_date",
+    "category": "数字日期",
+    "arm": "norm",
+    "repeat": 0,
+    "source_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/digits_date.norm.r0.wav",
+    "sha256": "b21d2e57d2d77f466806a973e2d932175b93f25de6d9275df812feb01897919c",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": true,
+      "original_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+      "normalized_text": "会议定在二零二六年十月十二日上午十点三十分召开，预计持续二点五小时。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "会议定在二零二六年十月十二日上午十点三十分召开，预计持续二点五小时。",
+          "seconds": 6.269,
+          "synth_seconds": 0.654,
+          "pause_after": "none",
+          "rms_dbfs": -21.31,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 138240
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 6.269,
+      "speech_seconds": 5.797,
+      "segment_audio_seconds": 6.269,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.654,
+      "rtf": 0.104,
+      "peak_dbfs": -5.61,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": true,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 6.269,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -5.61,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 0.0,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.7968,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -21.31,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.08,
+        "detail": "最长内部静音（秒），起点 2.62s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.104,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "pass",
+        "value": 0.0938,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：會議定在2026年10月12日上午是點30分招開預积持續2.5小時",
+        "reference_text": "会议定在二零二六年十月十二日上午十点三十分召开预计持续二点五小时",
+        "hypothesis_text": "會議定在2026年10月12日上午是點30分招開預积持續2.5小時",
+        "canonical_hypothesis": "会议定在二零二六年十月十二日上午是点三十分招开预积持续二点五小时",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.1579,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 0.0769,
+        "detail": "仅数词部分的 CER（参考数词 13 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "digits_date",
+    "category": "数字日期",
+    "arm": "raw",
+    "repeat": 0,
+    "source_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/digits_date.raw.r0.wav",
+    "sha256": "7afa34ee1e7e1dc54bfb313a494bb7fd432ef24ebe035c3d4ebb3920d6eba774",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": false,
+      "original_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+      "normalized_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+          "seconds": 6.188,
+          "synth_seconds": 0.592,
+          "pause_after": "none",
+          "rms_dbfs": -20.95,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 136448
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 6.188,
+      "speech_seconds": 5.597,
+      "segment_audio_seconds": 6.188,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.592,
+      "rtf": 0.096,
+      "peak_dbfs": -6.21,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": false,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 6.188,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -6.21,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 7e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.5973,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -20.95,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.11,
+        "detail": "最长内部静音（秒），起点 0.09s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.096,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "warn",
+        "value": 0.25,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：會議定在二千二十六年十月12日上午三十趙開預機持續二五小時",
+        "reference_text": "会议定在二零二六年十月十二日上午十点三十分召开预计持续二点五小时",
+        "hypothesis_text": "會議定在二千二十六年十月12日上午三十趙開預機持續二五小時",
+        "canonical_hypothesis": "会议定在二千二十六年十月十二日上午三十赵开预机持续二五小时",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.2105,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 0.3077,
+        "detail": "仅数词部分的 CER（参考数词 13 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "digits_date",
+    "category": "数字日期",
+    "arm": "raw",
+    "repeat": 1,
+    "source_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/digits_date.raw.r1.wav",
+    "sha256": "f719e8dfa6b1c794b9fb007d1a3f29d13c638aba25f4c9b82fc503488052ae81",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": false,
+      "original_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+      "normalized_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+          "seconds": 6.316,
+          "synth_seconds": 0.627,
+          "pause_after": "none",
+          "rms_dbfs": -21.07,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 139264
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 6.316,
+      "speech_seconds": 5.438,
+      "segment_audio_seconds": 6.316,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.627,
+      "rtf": 0.099,
+      "peak_dbfs": -5.06,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": false,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 6.316,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -5.06,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 1e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.4376,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -21.07,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.16,
+        "detail": "最长内部静音（秒），起点 0.79s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.099,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "warn",
+        "value": 0.25,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：會議定在二千二十六年十月十二日上午三十招開預機持續二五小時",
+        "reference_text": "会议定在二零二六年十月十二日上午十点三十分召开预计持续二点五小时",
+        "hypothesis_text": "會議定在二千二十六年十月十二日上午三十招開預機持續二五小時",
+        "canonical_hypothesis": "会议定在二千二十六年十月十二日上午三十招开预机持续二五小时",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.2105,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 0.3077,
+        "detail": "仅数词部分的 CER（参考数词 13 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "digits_date",
+    "category": "数字日期",
+    "arm": "norm",
+    "repeat": 1,
+    "source_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/digits_date.norm.r1.wav",
+    "sha256": "980c86f137e6ffebef8488bf72c5a5d0d383f874d52dd3f17400e040ad4afc53",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": true,
+      "original_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+      "normalized_text": "会议定在二零二六年十月十二日上午十点三十分召开，预计持续二点五小时。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "会议定在二零二六年十月十二日上午十点三十分召开，预计持续二点五小时。",
+          "seconds": 5.956,
+          "synth_seconds": 0.618,
+          "pause_after": "none",
+          "rms_dbfs": -21.1,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 131328
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 5.956,
+      "speech_seconds": 5.577,
+      "segment_audio_seconds": 5.956,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.618,
+      "rtf": 0.104,
+      "peak_dbfs": -4.86,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": true,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 5.956,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -4.86,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 2e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.5773,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -21.1,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.13,
+        "detail": "最长内部静音（秒），起点 0.58s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.104,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "pass",
+        "value": 0.0938,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：會一定在2026年10月12日上午10點30分照開預機持續2點5小時",
+        "reference_text": "会议定在二零二六年十月十二日上午十点三十分召开预计持续二点五小时",
+        "hypothesis_text": "會一定在2026年10月12日上午10點30分照開預機持續2點5小時",
+        "canonical_hypothesis": "会一定在二零二六年十月十二日上午十点三十分照开预机持续二点五小时",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.2105,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 0.0,
+        "detail": "仅数词部分的 CER（参考数词 13 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "digits_date",
+    "category": "数字日期",
+    "arm": "norm",
+    "repeat": 2,
+    "source_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/digits_date.norm.r2.wav",
+    "sha256": "29a3c0dfb4889fda128bb15b88160fc0333cb1dd372944df3713872b9dcf769a",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": true,
+      "original_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+      "normalized_text": "会议定在二零二六年十月十二日上午十点三十分召开，预计持续二点五小时。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "会议定在二零二六年十月十二日上午十点三十分召开，预计持续二点五小时。",
+          "seconds": 6.235,
+          "synth_seconds": 0.608,
+          "pause_after": "none",
+          "rms_dbfs": -21.38,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 137472
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 6.235,
+      "speech_seconds": 5.887,
+      "segment_audio_seconds": 6.235,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.608,
+      "rtf": 0.097,
+      "peak_dbfs": -5.53,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": true,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 6.235,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -5.53,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 3e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.8866,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -21.38,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.05,
+        "detail": "最长内部静音（秒），起点 0.63s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.097,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "pass",
+        "value": 0.0625,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：會議定在2026年10月12日上午10點30分招開預機持續2點5小時",
+        "reference_text": "会议定在二零二六年十月十二日上午十点三十分召开预计持续二点五小时",
+        "hypothesis_text": "會議定在2026年10月12日上午10點30分招開預機持續2點5小時",
+        "canonical_hypothesis": "会议定在二零二六年十月十二日上午十点三十分招开预机持续二点五小时",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.1579,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 0.0,
+        "detail": "仅数词部分的 CER（参考数词 13 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "digits_date",
+    "category": "数字日期",
+    "arm": "raw",
+    "repeat": 2,
+    "source_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/digits_date.raw.r2.wav",
+    "sha256": "5ebc8eaf5e3c52a9509cc457f6d532161c04f2ffef11feff6fe9e2e88f565b44",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": false,
+      "original_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+      "normalized_text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。",
+          "seconds": 6.072,
+          "synth_seconds": 0.62,
+          "pause_after": "none",
+          "rms_dbfs": -21.0,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 133888
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 6.072,
+      "speech_seconds": 5.637,
+      "segment_audio_seconds": 6.072,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.62,
+      "rtf": 0.102,
+      "peak_dbfs": -5.26,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": false,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 6.072,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -5.26,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 4e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.6372,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -21.0,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.08,
+        "detail": "最长内部静音（秒），起点 0.63s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.102,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "fail",
+        "value": 0.2812,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：會一定在二千二十六年10月12日上午是三十趙開預機持續二五小時",
+        "reference_text": "会议定在二零二六年十月十二日上午十点三十分召开预计持续二点五小时",
+        "hypothesis_text": "會一定在二千二十六年10月12日上午是三十趙開預機持續二五小時",
+        "canonical_hypothesis": "会一定在二千二十六年十月十二日上午是三十赵开预机持续二五小时",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.2632,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 0.3077,
+        "detail": "仅数词部分的 CER（参考数词 13 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "mixed_en",
+    "category": "中英混合",
+    "arm": "raw",
+    "repeat": 0,
+    "source_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/mixed_en.raw.r0.wav",
+    "sha256": "569661dd0acee12561a133faf06b079938619b33cafa1aeff80e8f08deaa55ac",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": false,
+      "original_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+      "normalized_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+          "seconds": 5.654,
+          "synth_seconds": 0.589,
+          "pause_after": "none",
+          "rms_dbfs": -20.66,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 124672
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 5.654,
+      "speech_seconds": 5.198,
+      "segment_audio_seconds": 5.654,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.589,
+      "rtf": 0.104,
+      "peak_dbfs": -4.11,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": false,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": [
+        "混合语言需逐专名复核；不保证跨语言音色或发音稳定"
+      ]
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 5.654,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -4.11,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 0.00014,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.1982,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -20.66,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.04,
+        "detail": "最长内部静音（秒），起点 2.26s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.104,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "fail",
+        "value": 0.4839,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我們用8.13.13和Bio部署了新德語音模型顏吃比CBOD很多",
+        "reference_text": "我们用派森三点一三和吉皮优部署了新的语音模型延迟比西皮优低很多",
+        "hypothesis_text": "我們用8.13.13和Bio部署了新德語音模型顏吃比CBOD很多",
+        "canonical_hypothesis": "我们用八点一三十三和bio部署了新德语音模型颜吃比cbod很多",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.4643,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 1.3333,
+        "detail": "仅数词部分的 CER（参考数词 3 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "mixed_en",
+    "category": "中英混合",
+    "arm": "norm",
+    "repeat": 0,
+    "source_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/mixed_en.norm.r0.wav",
+    "sha256": "3f65992827b8bda66331ec7d36cdfe8ef85e470c081a5c2c16c83f133a5c576f",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": true,
+      "original_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+      "normalized_text": "我们用派森 三点一三和吉皮优部署了新的语音模型，延迟比西皮优低很多。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我们用派森 三点一三和吉皮优部署了新的语音模型，延迟比西皮优低很多。",
+          "seconds": 6.56,
+          "synth_seconds": 0.644,
+          "pause_after": "none",
+          "rms_dbfs": -21.28,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 144640
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 6.56,
+      "speech_seconds": 5.797,
+      "segment_audio_seconds": 6.56,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.644,
+      "rtf": 0.098,
+      "peak_dbfs": -5.9,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": true,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": [
+        "混合语言需逐专名复核；不保证跨语言音色或发音稳定"
+      ]
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 6.56,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -5.9,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 6e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.7968,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -21.28,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.1,
+        "detail": "最长内部静音（秒），起点 4.59s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.098,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "fail",
+        "value": 0.3226,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我们用排散3.13和级皮又部属了性的与一模型延迟比细皮又低很多",
+        "reference_text": "我们用派森三点一三和吉皮优部署了新的语音模型延迟比西皮优低很多",
+        "hypothesis_text": "我们用排散3.13和级皮又部属了性的与一模型延迟比细皮又低很多",
+        "canonical_hypothesis": "我们用排散三点一三和级皮又部属了性的与一模型延迟比细皮又低很多",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.3929,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 0.0,
+        "detail": "仅数词部分的 CER（参考数词 3 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "mixed_en",
+    "category": "中英混合",
+    "arm": "raw",
+    "repeat": 1,
+    "source_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/mixed_en.raw.r1.wav",
+    "sha256": "72465769e97bcdf7b9e17d3ea27774200230d5dbf6e94714371ca41e0e6d4d3a",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": false,
+      "original_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+      "normalized_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+          "seconds": 5.48,
+          "synth_seconds": 0.544,
+          "pause_after": "none",
+          "rms_dbfs": -20.82,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 120832
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 5.48,
+      "speech_seconds": 4.969,
+      "segment_audio_seconds": 5.48,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.544,
+      "rtf": 0.099,
+      "peak_dbfs": -4.53,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": false,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": [
+        "混合语言需逐专名复核；不保证跨语言音色或发音稳定"
+      ]
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 5.48,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -4.53,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 7e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 4.9687,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -20.82,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.11,
+        "detail": "最长内部静音（秒），起点 1.86s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.099,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "fail",
+        "value": 0.4839,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我們用8.3.13盒比又部署了性的語音模型顏吃比CBOD很多",
+        "reference_text": "我们用派森三点一三和吉皮优部署了新的语音模型延迟比西皮优低很多",
+        "hypothesis_text": "我們用8.3.13盒比又部署了性的語音模型顏吃比CBOD很多",
+        "canonical_hypothesis": "我们用八点三十三盒比又部署了性的语音模型颜吃比cbod很多",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.5,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 1.3333,
+        "detail": "仅数词部分的 CER（参考数词 3 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "mixed_en",
+    "category": "中英混合",
+    "arm": "norm",
+    "repeat": 1,
+    "source_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/mixed_en.norm.r1.wav",
+    "sha256": "31f2c67d200187c23014da76ee0b9313020ebc9e8663d47fa362a542deda46ce",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": true,
+      "original_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+      "normalized_text": "我们用派森 三点一三和吉皮优部署了新的语音模型，延迟比西皮优低很多。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我们用派森 三点一三和吉皮优部署了新的语音模型，延迟比西皮优低很多。",
+          "seconds": 6.571,
+          "synth_seconds": 0.619,
+          "pause_after": "none",
+          "rms_dbfs": -21.32,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 144896
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 6.571,
+      "speech_seconds": 5.717,
+      "segment_audio_seconds": 6.571,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.619,
+      "rtf": 0.094,
+      "peak_dbfs": -5.7,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": true,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": [
+        "混合语言需逐专名复核；不保证跨语言音色或发音稳定"
+      ]
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 6.571,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -5.7,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 1e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.717,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -21.32,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.18,
+        "detail": "最长内部静音（秒），起点 3.32s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.094,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "fail",
+        "value": 0.2903,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我们用拍3.13和级皮幼部署了性的与一模型延迟比细皮幼低很多",
+        "reference_text": "我们用派森三点一三和吉皮优部署了新的语音模型延迟比西皮优低很多",
+        "hypothesis_text": "我们用拍3.13和级皮幼部署了性的与一模型延迟比细皮幼低很多",
+        "canonical_hypothesis": "我们用拍三点一三和级皮幼部署了性的与一模型延迟比细皮幼低很多",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.3571,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 0.0,
+        "detail": "仅数词部分的 CER（参考数词 3 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "mixed_en",
+    "category": "中英混合",
+    "arm": "raw",
+    "repeat": 2,
+    "source_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/mixed_en.raw.r2.wav",
+    "sha256": "16be090bca5aa3a2970fa68a4ed11c1695203f4b60376e3bce9eccd753969b79",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": false,
+      "original_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+      "normalized_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+          "seconds": 5.666,
+          "synth_seconds": 0.536,
+          "pause_after": "none",
+          "rms_dbfs": -20.53,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 124928
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 5.666,
+      "speech_seconds": 5.278,
+      "segment_audio_seconds": 5.666,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.536,
+      "rtf": 0.095,
+      "peak_dbfs": -4.24,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": false,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": [
+        "混合语言需逐专名复核；不保证跨语言音色或发音稳定"
+      ]
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 5.666,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -4.24,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 7e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.278,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -20.53,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.08,
+        "detail": "最长内部静音（秒），起点 5.55s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.095,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "fail",
+        "value": 0.4839,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我们用8.3.13和地表部署了性得与阴模型延迟比斯比欧帝很多",
+        "reference_text": "我们用派森三点一三和吉皮优部署了新的语音模型延迟比西皮优低很多",
+        "hypothesis_text": "我们用8.3.13和地表部署了性得与阴模型延迟比斯比欧帝很多",
+        "canonical_hypothesis": "我们用八点三十三和地表部署了性得与阴模型延迟比斯比欧帝很多",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.5,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 1.3333,
+        "detail": "仅数词部分的 CER（参考数词 3 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "mixed_en",
+    "category": "中英混合",
+    "arm": "norm",
+    "repeat": 2,
+    "source_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/mixed_en.norm.r2.wav",
+    "sha256": "04b812eb79f29adeb3e67483b4793e1757f5351923fe8bc7f13e7474fe3a9857",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": true,
+      "original_text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。",
+      "normalized_text": "我们用派森 三点一三和吉皮优部署了新的语音模型，延迟比西皮优低很多。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我们用派森 三点一三和吉皮优部署了新的语音模型，延迟比西皮优低很多。",
+          "seconds": 6.06,
+          "synth_seconds": 0.614,
+          "pause_after": "none",
+          "rms_dbfs": -21.11,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 133632
+        }
+      ],
+      "segment_count": 1,
+      "duration_seconds": 6.06,
+      "speech_seconds": 5.567,
+      "segment_audio_seconds": 6.06,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.614,
+      "rtf": 0.101,
+      "peak_dbfs": -4.47,
+      "segment_rms_std_db": 0.0,
+      "params": {
+        "normalize": true,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": [
+        "混合语言需逐专名复核；不保证跨语言音色或发音稳定"
+      ]
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 6.06,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -4.47,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 4e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.5673,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -21.11,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.06,
+        "detail": "最长内部静音（秒），起点 4.89s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.101,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "fail",
+        "value": 0.2903,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我们用拍s3.13和极皮又部署了性的与一模型延迟比细皮又低很多",
+        "reference_text": "我们用派森三点一三和吉皮优部署了新的语音模型延迟比西皮优低很多",
+        "hypothesis_text": "我们用拍s3.13和极皮又部署了性的与一模型延迟比细皮又低很多",
+        "canonical_hypothesis": "我们用拍s三点一三和极皮又部署了性的与一模型延迟比细皮又低很多",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.3571,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": 0.0,
+        "detail": "仅数词部分的 CER（参考数词 3 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "zh_emotional_turn",
+    "category": "叙事转折",
+    "arm": "norm",
+    "repeat": 0,
+    "source_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/zh_emotional_turn.norm.r0.wav",
+    "sha256": "24f7299b779b6d45bbde3107e9c0a6aab0f8ab2aae4e3d4c97e60945fa5d8a2d",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": true,
+      "original_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "normalized_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我以为你不会来了。",
+          "seconds": 1.962,
+          "synth_seconds": 0.189,
+          "pause_after": "sentence",
+          "rms_dbfs": -19.78,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 43264
+        },
+        {
+          "index": 1,
+          "text": "可是门开了，你站在那里。",
+          "seconds": 1.892,
+          "synth_seconds": 0.229,
+          "pause_after": "sentence",
+          "rms_dbfs": -19.53,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 43264,
+          "samples": 41728
+        },
+        {
+          "index": 2,
+          "text": "谢谢你，还记得这个约定。",
+          "seconds": 1.916,
+          "synth_seconds": 0.217,
+          "pause_after": "none",
+          "rms_dbfs": -19.27,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 84992,
+          "samples": 42240
+        }
+      ],
+      "segment_count": 3,
+      "duration_seconds": 5.77,
+      "speech_seconds": 5.029,
+      "segment_audio_seconds": 5.77,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.636,
+      "rtf": 0.11,
+      "peak_dbfs": -4.53,
+      "segment_rms_std_db": 0.208,
+      "params": {
+        "normalize": true,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 5.77,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -4.53,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 3e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.0286,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -19.52,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.13,
+        "detail": "最长内部静音（秒），起点 1.83s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.11,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "pass",
+        "value": 0.0714,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我以为你不会来了,可是门开了你站在哪里,谢谢你还记得这个月定。",
+        "reference_text": "我以为你不会来了可是门开了你站在那里谢谢你还记得这个约定",
+        "hypothesis_text": "我以为你不会来了,可是门开了你站在哪里,谢谢你还记得这个月定。",
+        "canonical_hypothesis": "我以为你不会来了可是门开了你站在哪里谢谢你还记得这个月定",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.0714,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": null,
+        "detail": "仅数词部分的 CER（参考数词 0 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "zh_emotional_turn",
+    "category": "叙事转折",
+    "arm": "raw",
+    "repeat": 0,
+    "source_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/zh_emotional_turn.raw.r0.wav",
+    "sha256": "7483cd54b752cf66753952a125e6dd2fb27dc25180c894d175801edef063e561",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": false,
+      "original_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "normalized_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我以为你不会来了。",
+          "seconds": 1.765,
+          "synth_seconds": 0.195,
+          "pause_after": "sentence",
+          "rms_dbfs": -19.73,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 38912
+        },
+        {
+          "index": 1,
+          "text": "可是门开了，你站在那里。",
+          "seconds": 1.858,
+          "synth_seconds": 0.193,
+          "pause_after": "sentence",
+          "rms_dbfs": -19.31,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 38912,
+          "samples": 40960
+        },
+        {
+          "index": 2,
+          "text": "谢谢你，还记得这个约定。",
+          "seconds": 1.962,
+          "synth_seconds": 0.2,
+          "pause_after": "none",
+          "rms_dbfs": -19.42,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 79872,
+          "samples": 43264
+        }
+      ],
+      "segment_count": 3,
+      "duration_seconds": 5.584,
+      "speech_seconds": 4.989,
+      "segment_audio_seconds": 5.585,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.587,
+      "rtf": 0.105,
+      "peak_dbfs": -5.08,
+      "segment_rms_std_db": 0.178,
+      "params": {
+        "normalize": false,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 5.584,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -5.08,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 5e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 4.9887,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -19.49,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.14,
+        "detail": "最长内部静音（秒），起点 3.50s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.105,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "pass",
+        "value": 0.0714,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我以为你不会来了,可是门开了你站在哪里,谢谢你还记得这个月定。",
+        "reference_text": "我以为你不会来了可是门开了你站在那里谢谢你还记得这个约定",
+        "hypothesis_text": "我以为你不会来了,可是门开了你站在哪里,谢谢你还记得这个月定。",
+        "canonical_hypothesis": "我以为你不会来了可是门开了你站在哪里谢谢你还记得这个月定",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.0714,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": null,
+        "detail": "仅数词部分的 CER（参考数词 0 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "zh_emotional_turn",
+    "category": "叙事转折",
+    "arm": "raw",
+    "repeat": 1,
+    "source_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/zh_emotional_turn.raw.r1.wav",
+    "sha256": "5b17d1b655195c4c61caacae92b6a68884ff15305fa70b155aa5cca461ed1331",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": false,
+      "original_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "normalized_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我以为你不会来了。",
+          "seconds": 1.811,
+          "synth_seconds": 0.187,
+          "pause_after": "sentence",
+          "rms_dbfs": -19.51,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 39936
+        },
+        {
+          "index": 1,
+          "text": "可是门开了，你站在那里。",
+          "seconds": 1.927,
+          "synth_seconds": 0.298,
+          "pause_after": "sentence",
+          "rms_dbfs": -19.39,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 39936,
+          "samples": 42496
+        },
+        {
+          "index": 2,
+          "text": "谢谢你，还记得这个约定。",
+          "seconds": 1.881,
+          "synth_seconds": 0.248,
+          "pause_after": "none",
+          "rms_dbfs": -19.62,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 82432,
+          "samples": 41472
+        }
+      ],
+      "segment_count": 3,
+      "duration_seconds": 5.619,
+      "speech_seconds": 5.059,
+      "segment_audio_seconds": 5.619,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.733,
+      "rtf": 0.13,
+      "peak_dbfs": -4.59,
+      "segment_rms_std_db": 0.094,
+      "params": {
+        "normalize": false,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 5.619,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -4.59,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 7e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.0585,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -19.52,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.13,
+        "detail": "最长内部静音（秒），起点 3.60s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.13,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "pass",
+        "value": 0.0714,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我以为你不会来了,可是门开了你站在哪里,谢谢你还记得这个月定。",
+        "reference_text": "我以为你不会来了可是门开了你站在那里谢谢你还记得这个约定",
+        "hypothesis_text": "我以为你不会来了,可是门开了你站在哪里,谢谢你还记得这个月定。",
+        "canonical_hypothesis": "我以为你不会来了可是门开了你站在哪里谢谢你还记得这个月定",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.0714,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": null,
+        "detail": "仅数词部分的 CER（参考数词 0 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "zh_emotional_turn",
+    "category": "叙事转折",
+    "arm": "norm",
+    "repeat": 1,
+    "source_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/zh_emotional_turn.norm.r1.wav",
+    "sha256": "aa443b977eec2ca3d7d7422b8bc635d23b5e1595c8092edfbea1c26a2fdc3a9a",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": true,
+      "original_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "normalized_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我以为你不会来了。",
+          "seconds": 1.95,
+          "synth_seconds": 0.191,
+          "pause_after": "sentence",
+          "rms_dbfs": -20.04,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 43008
+        },
+        {
+          "index": 1,
+          "text": "可是门开了，你站在那里。",
+          "seconds": 1.858,
+          "synth_seconds": 0.189,
+          "pause_after": "sentence",
+          "rms_dbfs": -19.23,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 43008,
+          "samples": 40960
+        },
+        {
+          "index": 2,
+          "text": "谢谢你，还记得这个约定。",
+          "seconds": 2.009,
+          "synth_seconds": 0.21,
+          "pause_after": "none",
+          "rms_dbfs": -19.32,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 83968,
+          "samples": 44288
+        }
+      ],
+      "segment_count": 3,
+      "duration_seconds": 5.817,
+      "speech_seconds": 4.988,
+      "segment_audio_seconds": 5.817,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.59,
+      "rtf": 0.101,
+      "peak_dbfs": -4.89,
+      "segment_rms_std_db": 0.362,
+      "params": {
+        "normalize": true,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 5.817,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -4.89,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 0.00012,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 4.9885,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -19.47,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.25,
+        "detail": "最长内部静音（秒），起点 3.67s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.101,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "pass",
+        "value": 0.0714,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我以为你不会来了,可是门开了你站在哪里,谢谢你还记得这个月定。",
+        "reference_text": "我以为你不会来了可是门开了你站在那里谢谢你还记得这个约定",
+        "hypothesis_text": "我以为你不会来了,可是门开了你站在哪里,谢谢你还记得这个月定。",
+        "canonical_hypothesis": "我以为你不会来了可是门开了你站在哪里谢谢你还记得这个月定",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.0714,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": null,
+        "detail": "仅数词部分的 CER（参考数词 0 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "zh_emotional_turn",
+    "category": "叙事转折",
+    "arm": "raw",
+    "repeat": 2,
+    "source_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/zh_emotional_turn.raw.r2.wav",
+    "sha256": "5cccd96f9b2bb46ed7fec2dcae60b5d24148786ec539ca240a88629f3313ff88",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": false,
+      "original_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "normalized_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我以为你不会来了。",
+          "seconds": 1.66,
+          "synth_seconds": 0.165,
+          "pause_after": "sentence",
+          "rms_dbfs": -20.02,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 36608
+        },
+        {
+          "index": 1,
+          "text": "可是门开了，你站在那里。",
+          "seconds": 1.8,
+          "synth_seconds": 0.187,
+          "pause_after": "sentence",
+          "rms_dbfs": -19.33,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 36608,
+          "samples": 39680
+        },
+        {
+          "index": 2,
+          "text": "谢谢你，还记得这个约定。",
+          "seconds": 1.974,
+          "synth_seconds": 0.191,
+          "pause_after": "none",
+          "rms_dbfs": -19.73,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 76288,
+          "samples": 43520
+        }
+      ],
+      "segment_count": 3,
+      "duration_seconds": 5.433,
+      "speech_seconds": 4.979,
+      "segment_audio_seconds": 5.434,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.543,
+      "rtf": 0.1,
+      "peak_dbfs": -5.31,
+      "segment_rms_std_db": 0.283,
+      "params": {
+        "normalize": false,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 5.433,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -5.31,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 4e-05,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 4.9787,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -19.68,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.15,
+        "detail": "最长内部静音（秒），起点 1.50s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.1,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "pass",
+        "value": 0.0714,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我以為你不會來了可是門開了你站在哪裡謝謝你還記得這個月定",
+        "reference_text": "我以为你不会来了可是门开了你站在那里谢谢你还记得这个约定",
+        "hypothesis_text": "我以為你不會來了可是門開了你站在哪裡謝謝你還記得這個月定",
+        "canonical_hypothesis": "我以为你不会来了可是门开了你站在哪里谢谢你还记得这个月定",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.0714,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": null,
+        "detail": "仅数词部分的 CER（参考数词 0 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  },
+  {
+    "id": "zh_emotional_turn",
+    "category": "叙事转折",
+    "arm": "norm",
+    "repeat": 2,
+    "source_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+    "language": "zh-cn",
+    "wav": "validation/piper-repeat/zh_emotional_turn.norm.r2.wav",
+    "sha256": "93b2303a6aa5cd15647bfcf86848627e6065f7153696f5291052ab3fb739ca0f",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "engine": "piper",
+      "engine_info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "sample_rate": 22050,
+      "normalized": true,
+      "original_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "normalized_text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。",
+      "segments": [
+        {
+          "index": 0,
+          "text": "我以为你不会来了。",
+          "seconds": 1.823,
+          "synth_seconds": 0.163,
+          "pause_after": "sentence",
+          "rms_dbfs": -19.4,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 40192
+        },
+        {
+          "index": 1,
+          "text": "可是门开了，你站在那里。",
+          "seconds": 2.032,
+          "synth_seconds": 0.196,
+          "pause_after": "sentence",
+          "rms_dbfs": -19.6,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 40192,
+          "samples": 44800
+        },
+        {
+          "index": 2,
+          "text": "谢谢你，还记得这个约定。",
+          "seconds": 1.927,
+          "synth_seconds": 0.178,
+          "pause_after": "none",
+          "rms_dbfs": -19.53,
+          "attempts": 1,
+          "direction": {},
+          "start_sample": 84992,
+          "samples": 42496
+        }
+      ],
+      "segment_count": 3,
+      "duration_seconds": 5.782,
+      "speech_seconds": 5.308,
+      "segment_audio_seconds": 5.782,
+      "language": "zh-cn",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "authorization": null,
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.538,
+      "rtf": 0.093,
+      "peak_dbfs": -4.85,
+      "segment_rms_std_db": 0.083,
+      "params": {
+        "normalize": true,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 5,
+        "processing": "minimal",
+        "max_output_seconds": 1800
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 5.782,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -4.85,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 0.0001,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 5.3079,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -19.53,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.16,
+        "detail": "最长内部静音（秒），起点 1.66s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.093,
+    "asr": [
+      {
+        "name": "asr_cer",
+        "status": "pass",
+        "value": 0.0714,
+        "detail": "回听识别 CER（模型 base）；ASR 文本：我以为你不会来了,可是门开了你站在哪里,谢谢你还记得这个月定。",
+        "reference_text": "我以为你不会来了可是门开了你站在那里谢谢你还记得这个约定",
+        "hypothesis_text": "我以为你不会来了,可是门开了你站在哪里,谢谢你还记得这个月定。",
+        "canonical_hypothesis": "我以为你不会来了可是门开了你站在哪里谢谢你还记得这个月定",
+        "language": "zh",
+        "threshold_basis": "uncalibrated_heuristic",
+        "opencc_available": true
+      },
+      {
+        "name": "asr_cer_text",
+        "status": "info",
+        "value": 0.0714,
+        "detail": "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"
+      },
+      {
+        "name": "asr_num_cer",
+        "status": "info",
+        "value": null,
+        "detail": "仅数词部分的 CER（参考数词 0 字；只能验证听到的数字串，不能验证朗读风格）"
+      }
+    ]
+  }
+]

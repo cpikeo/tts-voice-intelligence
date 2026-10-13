@@ -1,0 +1,95 @@
+{
+  "output": "validation/long.wav",
+  "derived": [],
+  "duration_seconds": 203.976,
+  "segment_count": 64,
+  "rtf": 0.109,
+  "segment_rms_std_db": 1.033,
+  "warnings": [
+    "段间响度标准差 1.03 dB 偏大（>1 dB），跨段一致性可能不足"
+  ]
+}
+{
+  "file": "validation/long.wav",
+  "ok": true,
+  "profile": "default",
+  "language": "zh-cn",
+  "checks": [
+    {
+      "name": "format",
+      "status": "pass",
+      "value": {
+        "sr": 22050,
+        "channels": 1,
+        "subtype": "PCM_24"
+      },
+      "detail": ""
+    },
+    {
+      "name": "duration",
+      "status": "pass",
+      "value": 203.976,
+      "detail": ""
+    },
+    {
+      "name": "clipping",
+      "status": "pass",
+      "value": 0.0,
+      "detail": "削波采样比例"
+    },
+    {
+      "name": "peak",
+      "status": "pass",
+      "value": -4.26,
+      "detail": "峰值 dBFS"
+    },
+    {
+      "name": "dc_offset",
+      "status": "pass",
+      "value": 0.0,
+      "detail": ""
+    },
+    {
+      "name": "active_signal_seconds",
+      "status": "info",
+      "value": 177.8857,
+      "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+    },
+    {
+      "name": "loudness_rms",
+      "status": "pass",
+      "value": -20.87,
+      "detail": "有声段 RMS dBFS，目标约 -20"
+    },
+    {
+      "name": "internal_silence",
+      "status": "pass",
+      "value": 0.5,
+      "detail": "最长内部静音（秒），起点 6.62s"
+    },
+    {
+      "name": "clicks_in_silence",
+      "status": "pass",
+      "value": 0,
+      "detail": "静音区孤立尖峰数"
+    },
+    {
+      "name": "speech_rate_chars_per_s",
+      "status": "info",
+      "value": 5.31,
+      "detail": "944规范化字符/有效信号秒；不含静音，非语音VAD，无通用语言阈值"
+    },
+    {
+      "name": "delivery_rate_chars_per_s",
+      "status": "info",
+      "value": 4.63,
+      "detail": "字符/成品总秒数，包含静音，不等同发声速度"
+    }
+  ],
+  "validation": {
+    "human_listening": "not_performed",
+    "asr": "not_requested"
+  },
+  "threshold_basis": "uncalibrated_heuristic"
+}
+{'synth_exit': 0, 'wall_seconds': 25.764784399000064, 'peak_rss_mb': 406.0546875, 'qa_exit': 0}

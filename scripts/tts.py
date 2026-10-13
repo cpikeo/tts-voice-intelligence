@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
-"""TTS 合成流水线（引擎可插拔）。
-
-流程：规范化 -> 分句/分段 -> 引擎逐段合成 -> 段内响度对齐 -> 边界淡变 -> 插入停顿 -> 峰值限制 -> 写母版 + 报告
-
-子命令：
-  check   检查环境与引擎可用性（JSON 输出，不合成）
-  synth   合成文本为音频，输出 WAV 母版（可选 FLAC/OGG 派生件）与 JSON 报告
-
-退出码：0 成功；1 输入为空；2 引擎不可用；3 合成失败；4 输出/参数错误。
-
-引擎接口（新增引擎只需实现 Engine）：
-  available() -> (bool, str)        可用性与原因
-  synthesize(text) -> np.ndarray    float32 单声道 [-1, 1]
-  sample_rate                       输出采样率
-
-依赖：numpy, soundfile；piper 引擎另需 piper-tts 包与 .onnx 模型（见 references/engines.md）。
-"""
+"""Deterministic TTS execution. See SKILL.md for decisions and README for CLI."""
 import argparse
 import datetime as _dt
 import hashlib
@@ -30,80 +14,33 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from textnorm import load_lexicon, normalize_zh  # noqa: E402
+from textnorm import load_lexicon, normalize_zh, normalize_text, detect_language, text_warnings  # noqa: E402
 
-VERSION = "0.2.0"
-
-
-class EngineError(RuntimeError):
-    """引擎不可用或合成失败。消息需可直接给用户诊断。"""
+VERSION = "0.3.0"
 
 
-# ---------------------------------------------------------------- 引擎层
-
-class Engine:
-    name = "base"
-    sample_rate = 0
-
-    def available(self):
-        return True, "ok"
-
-    def synthesize(self, text):
-        raise NotImplementedError
-
-
-class PiperEngine(Engine):
-    """Piper（ONNX，CPU 可跑）。注意：piper-tts 包为 GPL-3.0-or-later。"""
-    name = "piper"
-
-    def __init__(self, model, config=None, speaker=None, length_scale=1.0,
-                 noise_scale=0.667, noise_w_scale=0.8, use_cuda=False, download_dir=None):
-        try:
-            from piper import PiperVoice
-            from piper.config import SynthesisConfig
-        except ImportError as e:
-            raise EngineError(
-                "未安装 piper-tts。安装：pip install piper-tts（GPL-3.0，见 references/engines.md）"
-            ) from e
-        if not model:
-            raise EngineError("piper 引擎需要 --model 指定 .onnx 模型路径（见 references/engines.md）")
-        model = Path(model)
-        if not model.is_file():
-            raise EngineError(f"找不到 Piper 模型文件：{model}")
-        cfg = Path(config) if config else Path(str(model) + ".json")
-        if not cfg.is_file():
-            raise EngineError(f"找不到模型配置文件：{cfg}（需与 .onnx 同名的 .onnx.json）")
-        # 中文模型的 g2pW 资源默认会下载到 CWD；显式指定为模型同目录，避免污染工作区
-        self.voice = PiperVoice.load(str(model), str(cfg), use_cuda=use_cuda,
-                                     download_dir=str(download_dir or model.parent))
-        self.sample_rate = self.voice.config.sample_rate
-        self.syn = SynthesisConfig(
-            speaker_id=speaker,
-            length_scale=length_scale,
-            noise_scale=noise_scale,
-            noise_w_scale=noise_w_scale,
-            normalize_audio=False,  # 关闭逐句峰值归一化，响度由流水线统一控制
-        )
-        self.model_path = str(model)
-
-    def available(self):
-        return True, f"piper model={self.model_path} sr={self.sample_rate}"
-
-    def synthesize(self, text):
-        chunks = list(self.voice.synthesize(text, syn_config=self.syn))
-        if not chunks:
-            raise EngineError("Piper 返回空结果")
-        return np.concatenate([c.audio_float_array for c in chunks]).astype(np.float32)
+from engines import Engine, EngineError, PiperEngine, EspeakEngine, XTTSEngine
 
 
 def build_engine(args):
     if args.engine == "piper":
-        return PiperEngine(
-            model=args.model, config=args.config, speaker=args.speaker,
-            length_scale=args.length_scale, noise_scale=args.noise_scale,
-            noise_w_scale=args.noise_w, use_cuda=args.cuda,
-        )
-    raise EngineError(f"未知引擎：{args.engine}（当前支持：piper）")
+        if args.reference_audio or args.authorization:
+            raise EngineError("Piper 不支持克隆")
+        return PiperEngine(model=args.model, config=args.config, speaker=args.speaker,
+                           length_scale=args.length_scale, noise_scale=args.noise_scale,
+                           noise_w_scale=args.noise_w, use_cuda=args.cuda, language=args.language)
+    if args.engine != "piper" and (args.noise_scale != .667 or args.noise_w != .8):
+        raise EngineError("该适配器不支持 Piper 噪声参数")
+    if args.engine == "espeak":
+        if args.reference_audio or args.authorization or args.speaker is not None or args.cuda or args.model or args.config:
+            raise EngineError("eSpeak 不接受克隆、speaker id、CUDA 或模型/config参数")
+        return EspeakEngine(language=args.language, length_scale=args.length_scale)
+    if args.engine == "xtts":
+        if args.speaker is not None or args.length_scale != 1.0:
+            raise EngineError("XTTS 适配器不暴露 speaker id / 语速参数")
+        return XTTSEngine(args.model, args.config, args.language, args.reference_audio,
+                          args.authorization, args.purpose, args.cuda)
+    raise EngineError(f"未知引擎：{args.engine}（piper/espeak/xtts）")
 
 
 # ---------------------------------------------------------------- 分段
@@ -133,8 +70,11 @@ def _split_long(sentence, max_chars):
             if buf:
                 pieces.append(buf)
                 buf = ""
-            pieces.append(p[:max_chars])
-            p = p[max_chars:]
+            # Prefer whitespace boundaries for Latin words; hard split only when unavoidable.
+            cut = p.rfind(" ", 0, max_chars)
+            cut = cut + 1 if cut > 0 else max_chars
+            pieces.append(p[:cut])
+            p = p[cut:].lstrip()
         if len(buf) + len(p) <= max_chars:
             buf += p
         else:
@@ -150,6 +90,8 @@ def segment(text, max_chars=90):
 
     纯标点片段（如“真的吗？！”里的“！”）并入上一段，不单独成段。
     """
+    if max_chars <= 0:
+        raise ValueError("max_chars 必须大于零")
     segs = []
     paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
     for para in paragraphs:
@@ -196,17 +138,19 @@ def trim_silence(x, sr, pad_ms=30):
     return x[max(0, i0 - pad): min(len(x), i1 + pad)]
 
 
-def voiced_rms_db(x):
+def voiced_rms_db(x, sr=22050):
     """有声部分 RMS（dBFS）；整段无声时返回 None。"""
-    v = x[_voiced(x)]
+    from qa import active_frames
+    # Same frame activity definition as QA; sr supplied via parameter below.
+    v = x[np.repeat(active_frames(x, sr), max(1, int(sr * 0.01)))[:len(x)]]
     if v.size == 0:
         return None
     return _db(np.sqrt(np.mean(v.astype(np.float64) ** 2)))
 
 
-def level_to(x, target_db):
+def level_to(x, target_db, sr=22050):
     """段内响度对齐到 target_db（基于有声帧 RMS），增益限制在 ±12 dB。"""
-    rms_db = voiced_rms_db(x)
+    rms_db = voiced_rms_db(x, sr)
     if rms_db is None:
         return x
     gain = np.clip(10 ** ((target_db - rms_db) / 20), 10 ** (-12 / 20), 10 ** (12 / 20))
@@ -225,50 +169,112 @@ def fade(x, sr, ms=12):
 
 
 def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20.0,
-                    pauses=None, peak_db=-1.0, lexicon=None):
+                    pauses=None, peak_db=-1.0, lexicon=None, language=None, processing="legacy",
+                    max_output_seconds=1800, direction=None):
     """完整流水线，返回 (audio float32, sr, report dict)。"""
-    pauses = pauses or {"para": 700, "sentence": 400, "clause": 200, "none": 0}
+    pauses = pauses if pauses is not None else {"para": 700, "sentence": 400, "clause": 200, "none": 0}
     sr = engine.sample_rate
+    if not isinstance(sr, int) or sr < 1000 or max_chars <= 0:
+        raise ValueError("无效采样率 / max_chars")
+    if processing not in ("minimal", "legacy") or any(
+            not np.isfinite(v) or v < 0 for v in pauses.values()):
+        raise ValueError("无效处理模式或停顿参数")
+    if not np.isfinite(target_db) or not -60 <= target_db <= -3 or not np.isfinite(peak_db) or not -12 <= peak_db <= 0:
+        raise ValueError("无效响度/峰值参数")
+    if not np.isfinite(max_output_seconds) or not 1 <= max_output_seconds <= 1800:
+        raise ValueError("max_output_seconds 需为 1–1800 秒（内存边界，不支持无限长）")
     original = text
-    text = normalize_zh(text, lexicon) if normalize else text
+    if len(text) > 100000:
+        raise ValueError("单次输入超过100000字符；请分章节")
+    language = language or getattr(engine, "language", "zh")
+    if language == "auto":
+        language = detect_language(text)
+    text = normalize_text(text, language, lexicon) if normalize else text
     segs = segment(text, max_chars=max_chars)
     if not segs:
         raise ValueError("输入文本为空（去除空白后无可朗读内容）")
 
-    parts, seg_reports, warnings = [], [], []
+    beats = {}
+    if direction is not None:
+        if not isinstance(direction, dict) or any(not direction.get(k) for k in ("intent", "audience", "character")):
+            raise ValueError("direction 需 intent/audience/character")
+        for beat in direction.get("beats", []):
+            if set(beat) - {"index", "text", "intent", "rationale", "length_scale"}:
+                raise ValueError("不支持的声音控制；不能伪装情绪/重音能力")
+            index = beat.get("index")
+            if not isinstance(index, int) or not 0 <= index < len(segs) or index in beats:
+                raise ValueError("beat 索引无效或重复")
+            if beat.get("text") != segs[index].text or not beat.get("intent") or not beat.get("rationale"):
+                raise ValueError("beat 文本不匹配或缺少语义理由")
+            if "length_scale" in beat and (not getattr(engine, "capabilities", {}).get("rate") or
+                    not np.isfinite(beat["length_scale"]) or not .5 <= beat["length_scale"] <= 2):
+                raise ValueError("引擎不支持该语速或倍率超界")
+            beats[index] = beat
+    parts, seg_reports, warnings = [], [], text_warnings(original, language)
+    output_samples = 0
     t_total = 0.0
     for i, seg in enumerate(segs):
+        beat = beats.get(i, {})
+        saved_rate = None
+        if "length_scale" in beat:
+            if engine.name == "piper":
+                saved_rate = engine.syn.length_scale
+                engine.syn.length_scale = beat["length_scale"]
+            elif engine.name == "espeak":
+                saved_rate = engine.speed
+                engine.speed = round(175 / beat["length_scale"])
+            else:
+                raise ValueError("该适配器未实现逐段语速")
         t0 = time.perf_counter()
         last_err = None
-        for attempt in (1, 2):  # 单段失败重试一次
-            try:
-                raw = engine.synthesize(seg.text)
-                break
-            except Exception as e:  # noqa: BLE001 - 引擎异常统一包装
-                last_err = e
-        else:
-            raise EngineError(f"第 {i + 1} 段合成失败（{seg.text[:30]}…）：{last_err}") from last_err
+        try:
+            for attempt in (1, 2):  # 单段失败重试一次
+                try:
+                    raw = np.asarray(engine.synthesize(seg.text))
+                    if raw.ndim != 1 or raw.size == 0 or not np.isfinite(raw).all():
+                        raise EngineError("引擎输出为空、非有限或非单声道")
+                    if np.max(np.abs(raw)) > 1.0001:
+                        raise EngineError("引擎输出超出 [-1,1]；拒绝掩盖异常")
+                    break
+                except EngineError as e:  # Only adapter-declared failures are retried
+                    last_err = e
+            else:
+                raise EngineError(f"第 {i + 1} 段合成失败（{seg.text[:30]}…）：{last_err}") from last_err
+        finally:
+            if saved_rate is not None:
+                if engine.name == "piper":
+                    engine.syn.length_scale = saved_rate
+                else:
+                    engine.speed = saved_rate
         dt = time.perf_counter() - t0
         t_total += dt
-        x = trim_silence(raw.astype(np.float32), sr)
+        x = raw.astype(np.float32)
+        if processing == "legacy":
+            x = trim_silence(x, sr)
         if x.size < sr * 0.05:
             warnings.append(f"第 {i + 1} 段输出过短，可能发音缺失：{seg.text[:30]}")
-        x = level_to(x, target_db)
-        x = fade(x, sr)
+        if processing == "legacy":
+            x = fade(level_to(x, target_db, sr), sr)
         dur = len(x) / sr
-        rms_db = voiced_rms_db(x)
+        rms_db = voiced_rms_db(x, sr)
         if rms_db is None:
             warnings.append(f"第 {i + 1} 段几乎无声（有声帧低于 -50 dBFS），未做响度对齐：{seg.text[:30]}")
-        elif abs(rms_db - target_db) > 1.0:
+        elif processing == "legacy" and abs(rms_db - target_db) > 1.0:
             warnings.append(f"第 {i + 1} 段响度 {rms_db:.1f} dBFS 偏离目标 {target_db:.1f} dBFS"
                             f"（已触发 ±12 dB 增益限制）：{seg.text[:30]}")
         seg_reports.append({"index": i, "text": seg.text, "seconds": round(dur, 3),
                             "synth_seconds": round(dt, 3), "pause_after": seg.pause_after,
-                            "rms_dbfs": None if rms_db is None else round(rms_db, 2)})
+                            "rms_dbfs": None if rms_db is None else round(rms_db, 2),
+                            "attempts": attempt, "direction": beat, "start_sample": output_samples, "samples": len(x)})
         parts.append(x)
+        output_samples += len(x)
         gap = pauses.get(seg.pause_after, 0)
         if gap:
-            parts.append(np.zeros(int(sr * gap / 1000), dtype=np.float32))
+            gap_samples = int(sr * gap / 1000)
+            parts.append(np.zeros(gap_samples, dtype=np.float32))
+            output_samples += gap_samples
+        if output_samples > sr * max_output_seconds:
+            raise EngineError("输出超过时长上限；请按章节分批交付")
 
     audio = np.concatenate(parts)
     peak = float(np.max(np.abs(audio)))
@@ -277,12 +283,19 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
         audio = audio * (limit / peak)
         warnings.append(f"峰值 {_db(peak):.1f} dBFS 超过上限，已整体衰减到 {peak_db} dBFS")
 
+    for srep in seg_reports:
+        final = audio[srep["start_sample"]:srep["start_sample"] + srep["samples"]]
+        rms = voiced_rms_db(final, sr)
+        srep["rms_dbfs"] = None if rms is None else round(rms, 2)
+    from qa import active_seconds
     total = len(audio) / sr
     rms_list = [s["rms_dbfs"] for s in seg_reports if s["rms_dbfs"] is not None]
     rms_std = round(float(np.std(rms_list)), 3) if len(rms_list) > 1 else 0.0
     if rms_std > 1.0:
         warnings.append(f"段间响度标准差 {rms_std:.2f} dB 偏大（>1 dB），跨段一致性可能不足")
     report = {
+        "ok": True,  # synthesis success only; not QA acceptance
+        "direction": direction,
         "engine": engine.name,
         "engine_info": engine.available()[1],
         "sample_rate": sr,
@@ -292,15 +305,21 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
         "segments": seg_reports,
         "segment_count": len(segs),
         "duration_seconds": round(total, 3),
-        "speech_seconds": round(sum(s["seconds"] for s in seg_reports), 3),
+        "speech_seconds": round(active_seconds(audio, sr), 3),
+        "segment_audio_seconds": round(sum(s["seconds"] for s in seg_reports), 3),
+        "language": language,
+        "capabilities": getattr(engine, "capabilities", {}),
+        "authorization": getattr(engine, "authorization", None),
+        "validation": {"human_listening": "not_performed", "asr": "not_performed"},
         "synth_seconds": round(t_total, 3),
         "rtf": round(t_total / total, 3) if total > 0 else None,
         "peak_dbfs": round(_db(float(np.max(np.abs(audio)))), 2),
         # 段间一致性：各段对齐后的有声 RMS 与其标准差（客观代理，音色一致性仍需人工听评）
         "segment_rms_std_db": rms_std,
-        "params": {"normalize": normalize, "max_chars": max_chars, "target_db": target_db,
+        "params": {"normalize": normalize, "max_chars": max_chars, "target_db": target_db if processing == "legacy" else None,
                    "pause_ms": pauses, "peak_limit_dbfs": peak_db,
-                   "lexicon_entries": len(lexicon) if lexicon else 0},
+                   "lexicon_entries": len(lexicon) if lexicon else 0, "processing": processing,
+                   "max_output_seconds": max_output_seconds},
         "warnings": warnings,
     }
     return audio.astype(np.float32), sr, report
@@ -318,7 +337,15 @@ def write_audio(path, audio, sr, fmt=None):
     if subtype is None:
         raise ValueError(f"不支持的输出格式：.{ext}（支持 {'/'.join(SUPPORTED_FORMATS)}；"
                          f"MP3 需要额外编码器，本技能不支持）")
-    sf.write(str(path), audio, sr, subtype=subtype)
+    import os
+    import tempfile
+    fd, tmp = tempfile.mkstemp(dir=path.parent, suffix="." + ext)
+    os.close(fd)
+    try:
+        sf.write(tmp, audio, sr, subtype=subtype, format=ext.upper())
+        os.replace(tmp, path)
+    finally:
+        Path(tmp).unlink(missing_ok=True)
     return path
 
 
@@ -332,6 +359,8 @@ def sha256_file(path, chunk=1 << 20):
 
 def model_provenance(path):
     """模型可追溯信息：路径、大小、sha256。用于跨任务复现与许可核对。"""
+    if not path:
+        return {"path": None, "exists": False}
     p = Path(path)
     if not p.is_file():
         return {"path": str(p), "exists": False}
@@ -352,7 +381,8 @@ def cmd_check(args):
         info["hint"] = "pip install soundfile numpy"
     try:
         e = build_engine(args)
-        info["engines"][args.engine] = {"available": True, "info": e.available()[1]}
+        info["engines"][args.engine] = {"available": True, "info": e.available()[1],
+                                        "capabilities": e.capabilities}
         if getattr(args, "model", None):
             info["engines"][args.engine]["model"] = model_provenance(args.model)
     except Exception as e:  # noqa: BLE001 - check 必须给出诊断而不是抛栈
@@ -365,7 +395,7 @@ def cmd_check(args):
 def _validate_outputs(out, formats):
     """提前校验输出路径，避免合成完成后才失败（长文本浪费一次完整合成）。"""
     out = Path(out)
-    if out.suffix.lstrip(".").lower() not in SUPPORTED_FORMATS:
+    if out.suffix.lower() != ".wav":
         raise ValueError(f"母版必须是 WAV：不支持的输出格式 {out.suffix}"
                          f"（支持 {'/'.join(SUPPORTED_FORMATS)}；MP3 需额外编码器，本技能不支持）")
     for fmt in formats or []:
@@ -384,6 +414,18 @@ def cmd_synth(args):
         return 1
     try:
         out = _validate_outputs(args.out, args.format)
+        destinations = [out] + [out.with_suffix("." + fmt) for fmt in args.format or []]
+        if args.report:
+            destinations.append(Path(args.report))
+        sources = [Path(v) for v in (args.input, args.model, args.config, args.lexicon,
+                                    args.reference_audio, args.authorization, args.direction) if v]
+        if args.engine == "piper" and args.model and not args.config:
+            sources.append(Path(str(args.model) + ".json"))
+        if len({p.resolve() for p in destinations}) != len(destinations) or any(
+                d.resolve() == src.resolve() for d in destinations for src in sources):
+            raise ValueError("输出/报告不能互相覆盖或覆盖输入/私有资源")
+        if args.processing == "minimal" and ((args.pause_para, args.pause_sentence, args.pause_clause) != (700, 400, 200) or args.target_db != -20):
+            raise ValueError("停顿/目标RMS参数仅在 --processing legacy 下生效")
         engine = build_engine(args)
     except EngineError as e:
         print(f"引擎不可用：{e}", file=sys.stderr)
@@ -392,11 +434,13 @@ def cmd_synth(args):
         print(f"输出参数错误：{e}", file=sys.stderr)
         return 4
     try:
+        direction = json.loads(Path(args.direction).read_text(encoding="utf-8")) if args.direction else None
         audio, sr, report = synthesize_text(
             engine, text, normalize=not args.no_normalize, max_chars=args.max_chars,
-            target_db=args.target_db, lexicon=load_lexicon(args.lexicon) if args.lexicon else None,
+            target_db=args.target_db, language=getattr(engine, "language", args.language),
+            processing=args.processing, max_output_seconds=args.max_seconds, direction=direction, lexicon=load_lexicon(args.lexicon) if args.lexicon else None,
             pauses={"para": args.pause_para, "sentence": args.pause_sentence,
-                    "clause": args.pause_clause, "none": 0},
+                    "clause": args.pause_clause, "none": 0} if args.processing == "legacy" else {},
         )
     except EngineError as e:
         print(f"合成失败：{e}", file=sys.stderr)
@@ -407,15 +451,19 @@ def cmd_synth(args):
     report["created"] = _dt.datetime.now().astimezone().isoformat(timespec="seconds")
     report["skill_version"] = VERSION
     report["model"] = model_provenance(getattr(args, "model", None))
-    report["lexicon"] = str(args.lexicon) if args.lexicon else None
-    report["engine_params"] = {"length_scale": args.length_scale, "noise_scale": args.noise_scale,
-                               "noise_w": args.noise_w, "speaker": args.speaker,
-                               "cuda": args.cuda}
+    report["config"] = model_provenance(getattr(engine, "config_path", args.config))
+    report["lexicon"] = model_provenance(args.lexicon) if args.lexicon else None
+    report["runtime"] = {"python": sys.version.split()[0], "platform": platform.platform()}
+    report["engine_params"] = ({"length_scale": args.length_scale, "noise_scale": args.noise_scale,
+                               "noise_w": args.noise_w, "speaker": args.speaker, "cuda": args.cuda}
+                              if args.engine == "piper" else {"length_scale": args.length_scale, "speed_wpm": engine.speed}
+                              if args.engine == "espeak" else {"cuda": args.cuda})
     write_audio(out, audio, sr, "wav")  # 母版始终为 WAV
     derived = []
     for fmt in args.format or []:
         derived.append(str(write_audio(out.with_suffix("." + fmt), audio, sr, fmt)))
     report["output"] = str(out)
+    report["output_sha256"] = sha256_file(out)
     report["derived"] = derived
     if args.report:
         rp = Path(args.report)
@@ -428,12 +476,36 @@ def cmd_synth(args):
     return 0
 
 
+def _failure_report(args, code, reason):
+    # Never overwrite audio or protected inputs while reporting an invalid request.
+    if not args.report:
+        return
+    rp = Path(args.report)
+    protected = [args.out, args.input, args.model, args.config, args.lexicon,
+                 args.reference_audio, args.authorization, args.direction]
+    if args.engine == "piper" and args.model and not args.config:
+        protected.append(str(args.model) + ".json")
+    if rp.suffix.lower() != ".json" or any(rp.resolve() == Path(p).resolve() for p in protected if p):
+        return
+    try:
+        rp.parent.mkdir(parents=True, exist_ok=True)
+        rp.write_text(json.dumps({"ok": False, "exit_code": code, "reason": reason,
+                                  "created": _dt.datetime.now().astimezone().isoformat(),
+                                  "skill_version": VERSION}, ensure_ascii=False, indent=2))
+    except OSError:
+        pass  # Original error is already visible; do not mask it with report I/O.
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description="TTS 合成流水线")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     def add_engine_args(sp):
-        sp.add_argument("--engine", default="piper", help="引擎名（当前：piper）")
+        sp.add_argument("--engine", default="piper", help="piper / espeak / xtts")
+        sp.add_argument("--language", default="auto", help="BCP-47；Piper 默认取模型，其他引擎显式指定")
+        sp.add_argument("--reference-audio", help="授权克隆本地参考音频")
+        sp.add_argument("--authorization", help="本地授权记录 JSON")
+        sp.add_argument("--purpose", help="需与授权用途完全一致")
         sp.add_argument("--model", help="引擎模型路径（piper: .onnx）")
         sp.add_argument("--config", help="模型配置（默认同名 .onnx.json）")
         sp.add_argument("--speaker", type=int, default=None, help="多说话人模型的 speaker id")
@@ -457,6 +529,9 @@ def main(argv=None):
     s.add_argument("--no-normalize", action="store_true", help="关闭中文文本规范化")
     s.add_argument("--lexicon", help="发音词典 TSV（原词<TAB>朗读形式）")
     s.add_argument("--max-chars", type=int, default=90, help="单段最大字符数")
+    s.add_argument("--direction", help="语义声音策略 JSON，按规范化后的段落文本匹配 beats")
+    s.add_argument("--processing", choices=["minimal", "legacy"], default="minimal", help="minimal 保留原动态；legacy 逐段对齐并加静音")
+    s.add_argument("--max-seconds", type=float, default=1800, help="输出时长上限，最大1800秒")
     s.add_argument("--target-db", type=float, default=-20.0, help="段内目标 RMS（dBFS）")
     s.add_argument("--pause-para", type=int, default=700, help="段落间停顿 ms")
     s.add_argument("--pause-sentence", type=int, default=400, help="句间停顿 ms")
@@ -464,7 +539,22 @@ def main(argv=None):
     s.set_defaults(func=cmd_synth)
 
     args = p.parse_args(argv)
-    return args.func(args)
+    try:
+        code = args.func(args)
+        if code != 0 and args.cmd == "synth":
+            _failure_report(args, code, "见 CLI stderr：本次未成功，不可将旧产物作为本次交付")
+        return code
+    except EngineError as e:
+        print(f"引擎错误：{e}", file=sys.stderr)
+        code = 2 if args.cmd == "check" else 3
+        if args.cmd == "synth":
+            _failure_report(args, code, str(e))
+        return code
+    except (OSError, ValueError, RuntimeError, TypeError) as e:
+        print(f"输入/配置/写入错误：{e}", file=sys.stderr)
+        if args.cmd == "synth":
+            _failure_report(args, 4, f"{type(e).__name__}: {e}")
+        return 4
 
 
 if __name__ == "__main__":

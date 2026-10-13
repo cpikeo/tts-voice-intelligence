@@ -1,0 +1,38 @@
+{
+  "python": "3.13.16",
+  "platform": "Linux-6.1.158+-x86_64-with-glibc2.41",
+  "skill_version": "0.3.0",
+  "engines": {
+    "piper": {
+      "available": true,
+      "info": "piper model=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx sr=22050",
+      "capabilities": {
+        "languages": [
+          "zh-cn"
+        ],
+        "selected_language": "zh-cn",
+        "voice": "model fixed",
+        "speakers": 1,
+        "rate": true,
+        "emotion": false,
+        "clone": false,
+        "hardware": "CPU/CUDA (GPU unverified)",
+        "dependencies": [
+          "piper-tts",
+          "onnxruntime"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "user must verify model card",
+        "resources": "model/config required; zh frontend may fetch resources"
+      },
+      "model": {
+        "path": "/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx",
+        "name": "zh_CN-huayan-medium.onnx",
+        "bytes": 63201294,
+        "sha256": "9929917bf8cabb26fd528ea44d3a6699c11e87317a14765312420be230be0f3d",
+        "exists": true
+      }
+    }
+  },
+  "soundfile": "1.2.2"
+}

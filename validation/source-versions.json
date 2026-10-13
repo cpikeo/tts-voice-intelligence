@@ -1,0 +1,41 @@
+{
+  "final_source_sha256": {
+    "scripts/blindtest.py": "1ce327a084b55fb1617ca57ead3cb132bfd061f32c9c7af9a24ea466b92875fa",
+    "scripts/engines.py": "f9bcd0ec6d3d42fe662512755794784e89375b943a8c358eeea688ecd828bbe9",
+    "scripts/qa.py": "a21cf392772172de2b9d5e2fdf15a99d545abf644a980cd598f8ad18ee4ef935",
+    "scripts/textnorm.py": "15ad3f6737fdf31c587b98f2ea86e0a913e236851407777ca5407d1b1a4b74ae",
+    "scripts/tts.py": "22bddc248cdc70539f83dab64cea8d0524500390d01aed99a2ab97e58b040bde"
+  },
+  "objective_runs": {
+    "validation/espeak-de/summary.json": {
+      "differs_from_final": [
+        "scripts/qa.py"
+      ],
+      "note": "QA help removed historical noise claim and stale prompt comment AFTER numeric runs; no numerical path changed. Original run hashes retained."
+    },
+    "validation/espeak-en-GB/summary.json": {
+      "differs_from_final": [
+        "scripts/qa.py"
+      ],
+      "note": "QA help removed historical noise claim and stale prompt comment AFTER numeric runs; no numerical path changed. Original run hashes retained."
+    },
+    "validation/espeak-en-us/summary.json": {
+      "differs_from_final": [
+        "scripts/qa.py"
+      ],
+      "note": "QA help removed historical noise claim and stale prompt comment AFTER numeric runs; no numerical path changed. Original run hashes retained."
+    },
+    "validation/espeak-ja/summary.json": {
+      "differs_from_final": [
+        "scripts/qa.py"
+      ],
+      "note": "QA help removed historical noise claim and stale prompt comment AFTER numeric runs; no numerical path changed. Original run hashes retained."
+    },
+    "validation/piper-repeat/summary.json": {
+      "differs_from_final": [
+        "scripts/qa.py"
+      ],
+      "note": "QA help removed historical noise claim and stale prompt comment AFTER numeric runs; no numerical path changed. Original run hashes retained."
+    }
+  }
+}

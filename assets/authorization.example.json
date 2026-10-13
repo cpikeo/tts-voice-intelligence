@@ -1,0 +1,15 @@
+{
+  "record_id": "REPLACE-WITH-PRIVATE-RECORD-ID",
+  "subject_id": "PSEUDONYMOUS-VOICE-OWNER-ID",
+  "consent_evidence": "PRIVATE-VERIFIABLE-CONSENT-REFERENCE",
+  "consent": false,
+  "revoked": false,
+  "deceptive_use": false,
+  "reference_reviewed": false,
+  "allowed_purposes": ["approved-narration"],
+  "allowed_languages": ["zh-cn"],
+  "expires_at": "2000-01-01T00:00:00+00:00",
+  "reference_sha256": "REPLACE-AFTER-REVIEW",
+  "model_sha256": "REPLACE-AFTER-LICENSE-REVIEW",
+  "model_license": "REPLACE-WITH-VERIFIED-LICENSE-AND-SCOPE"
+}

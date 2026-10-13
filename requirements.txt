@@ -12,3 +12,6 @@ soundfile>=0.12
 #   pip install faster-whisper scipy opencc-python-reimplemented
 # 运行测试：
 #   pip install pytest
+# 额外适配器（非基础依赖）：
+#   eSpeak NG: 系统安装 espeak-ng
+#   XTTS: 独立环境安装 coqui-tts + torch，并提供完整本地资产与有效授权；未实测

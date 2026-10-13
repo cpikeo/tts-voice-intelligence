@@ -1,9 +1,19 @@
-{"id": "zh_short", "category": "短文本", "text": "好的，我马上处理。"}
-{"id": "zh_plain", "category": "普通中文", "text": "这个方案的核心思路很简单：先把问题拆开，再逐个验证，最后把结果合在一起。"}
-{"id": "zh_long", "category": "长文本", "text": "清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。老人牵着狗慢慢走过公园，孩子们背着书包跑过路口。这是一座忙碌的城市，但在这一刻，它显得格外安静。"}
-{"id": "digits_date", "category": "数字日期", "text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。"}
-{"id": "percent", "category": "百分比", "text": "今年第三季度营收增长了3.5%，用户数超过1200万。"}
-{"id": "mixed_en", "category": "中英混合", "text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。"}
-{"id": "proper", "category": "专有名词", "text": "请把文件发送给Piper项目的维护者，并抄送给OpenAI团队。"}
-{"id": "polyphone", "category": "多音字", "text": "银行的行长说，重庆的重要会议要在下星期召开。"}
-{"id": "punct_pause", "category": "停顿与标点", "text": "第一，检查环境；第二，合成音频；第三，验收结果。最后，交付文件。"}
+{"id": "zh_short", "category": "短文本", "text": "好的，我马上处理。", "language": "zh-CN"}
+{"id": "zh_plain", "category": "普通中文", "text": "这个方案的核心思路很简单：先把问题拆开，再逐个验证，最后把结果合在一起。", "language": "zh-CN"}
+{"id": "zh_long", "category": "长文本", "text": "清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。老人牵着狗慢慢走过公园，孩子们背着书包跑过路口。这是一座忙碌的城市，但在这一刻，它显得格外安静。", "language": "zh-CN"}
+{"id": "digits_date", "category": "数字日期", "text": "会议定在2026年10月12日上午10:30召开，预计持续2.5小时。", "language": "zh-CN"}
+{"id": "percent", "category": "百分比", "text": "今年第三季度营收增长了3.5%，用户数超过1200万。", "language": "zh-CN"}
+{"id": "mixed_en", "category": "中英混合", "text": "我们用Python 3.13和GPU部署了新的语音模型，延迟比CPU低很多。", "language": "zh-CN"}
+{"id": "proper", "category": "专有名词", "text": "请把文件发送给Piper项目的维护者，并抄送给OpenAI团队。", "language": "zh-CN"}
+{"id": "polyphone", "category": "多音字", "text": "银行的行长说，重庆的重要会议要在下星期召开。", "language": "zh-CN"}
+{"id": "punct_pause", "category": "停顿与标点", "text": "第一，检查环境；第二，合成音频；第三，验收结果。最后，交付文件。", "language": "zh-CN"}
+{"id": "en_us_digits", "category": "English dates/numbers", "language": "en-US", "text": "The meeting is on October 13, 2026 at 10:30. Revenue grew by 3.5 percent. Order A-1024 is ready."}
+{"id": "en_gb_question", "category": "English intent contrast", "language": "en-GB", "text": "You finished already? I thought we needed another hour. Thank you, that changes everything."}
+{"id": "de_numbers", "category": "German numbers", "language": "de", "text": "Der Termin ist am 13. Oktober 2026. Die Temperatur beträgt minus fünf Grad."}
+{"id": "ja_names", "category": "Japanese dates/proper names", "language": "ja", "text": "会議は十月十三日です。東京から大阪まで移動します。"}
+{"id": "zh_emotional_turn", "category": "叙事转折", "language": "zh-CN", "text": "我以为你不会来了。可是门开了，你站在那里。谢谢你，还记得这个约定。"}
+{"id": "zh_ranges", "category": "需确认的数字范围", "language": "zh-CN", "text": "温度在10到20度之间。编号001024请逐位核对；比值是三比二。"}
+{"id": "zh_cross_switch", "category": "跨语言切换风险", "language": "zh-CN", "text": "欢迎来到东京。Next, we will discuss voice intelligence. 请核对OpenAI的业务读法。"}
+{"id": "zh_long_production", "category": "长文本连续性", "language": "zh-CN", "text": "清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n清晨的城市还没有完全醒来。街道上只有零星的车灯，早餐店的蒸汽慢慢升起。\n老人牵着狗走过公园，孩子们背着书包跑过路口。这一刻格外安静。\n"}
+{"id": "clone_zh_consistency", "category": "授权克隆跨文本", "language": "zh-CN", "requires_clone": true, "text": "这是与参考录音不同的文本。请核对目标音色，而不只是响度。"}
+{"id": "clone_en_drift", "category": "授权克隆跨语言漂移", "language": "en", "requires_clone": true, "text": "This sentence differs from the reference recording. Listen for identity drift and stable pronunciation."}

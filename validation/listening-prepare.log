@@ -1,0 +1,7 @@
+{
+  "package": "validation/listening-unrated",
+  "samples": 4,
+  "seed": 7,
+  "listen_dir": "validation/listening-unrated/listen",
+  "sheet": "validation/listening-unrated/ratings.csv"
+}

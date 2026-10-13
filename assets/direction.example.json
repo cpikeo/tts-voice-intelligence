@@ -1,0 +1,14 @@
+{
+  "intent": "让听众理解发现的后果，而非夸张播报",
+  "audience": "课程学习者",
+  "character": "同一位克制的讲解者",
+  "beats": [
+    {
+      "index": 0,
+      "text": "This discovery changes everything.",
+      "intent": "给新的关键结论消化时间",
+      "rationale": "语义发生转折，适度放慢；不承诺情绪或精细重音控制",
+      "length_scale": 1.3
+    }
+  ]
+}

@@ -1,18 +1,5 @@
 #!/usr/bin/env python3
-"""音频交付验收（独立于引擎，可对任意 WAV/FLAC/OGG 运行）。
-
-客观检查：文件可解码、时长合理、无削波/NaN/直流、响度在范围内、无异常长静音、
-无静音区的爆点。可选 --asr：用 faster-whisper 回听识别，与规范化原文比较字符错误率（CER）。
-
-退出码：0 = 无 fail；1 = 存在 fail；2 = 文件无法读取。
-阈值为经验启发值，不是行业标准；阈值依据、重复性与适用范围见 references/eval-results.md，
-可用 --profile 调整。
-
-回听指标分为三个互不混淆的量（详见 references/eval-results.md 第 2 节）：
-  asr_cer        整体 CER（回听文本的阿拉伯数字串会先读成中文再比对）
-  asr_cer_text   遮蔽数词后的 CER（只衡量非数字部分的发音，不受规范化链路影响）
-  asr_num_cer    仅数词部分的 CER（只能验证“听到的数字串”，不能验证朗读风格）
-"""
+"""Signal checks and optional ASR; heuristics are not perceptual quality certification."""
 import argparse
 import json
 import re
@@ -22,9 +9,31 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from textnorm import _MASK_NUM, load_lexicon, mask_numbers, normalize_zh  # noqa: E402
+from textnorm import _MASK_NUM, load_lexicon, mask_numbers, normalize_zh, normalize_text, detect_language  # noqa: E402
 
 FRAME_MS = 10
+
+
+def active_frames(x, sr):
+    """10ms RMS > -50dBFS. Signal activity proxy, not phonetic VAD."""
+    hop = max(1, int(sr * FRAME_MS / 1000))
+    n = (len(x) + hop - 1) // hop
+    if n == 0:
+        return np.zeros(0, dtype=bool)
+    padded = np.pad(x, (0, n * hop - len(x)))
+    power = np.sum(padded.reshape(n, hop).astype(np.float64) ** 2, axis=1)
+    counts = np.full(n, hop)
+    counts[-1] = len(x) - (n - 1) * hop
+    return np.sqrt(power / counts) > 10 ** (-50 / 20)
+
+
+def active_seconds(x, sr):
+    if sr <= 0 or not len(x) or not np.isfinite(x).all():
+        return 0.0
+    hop = max(1, int(sr * FRAME_MS / 1000))
+    mask = np.repeat(active_frames(x, sr), hop)[:len(x)]
+    return float(np.sum(mask)) / sr
+
 
 
 def _db(x):
@@ -44,6 +53,8 @@ def load_mono(path):
 
 def run_signal_checks(x, sr, info):
     checks = []
+    if sr <= 0 or not len(x):
+        return [_check("duration", "fail", 0, "空音频/无效采样率")]
     dur = len(x) / sr
     checks.append(_check("format", "pass" if sr >= 16000 else "warn",
                          {"sr": sr, "channels": info.channels, "subtype": info.subtype},
@@ -64,19 +75,16 @@ def run_signal_checks(x, sr, info):
     dc = float(abs(np.mean(x)))
     checks.append(_check("dc_offset", "warn" if dc > 0.01 else "pass", round(dc, 5)))
 
-    # 帧级分析（10 ms，向量化；长文本下逐帧 Python 循环会成为瓶颈）
-    hop = int(sr * FRAME_MS / 1000)
-    n = len(x) // hop
-    frames = x[: n * hop].reshape(n, hop)
-    frame_db = 20 * np.log10(np.sqrt(np.mean(frames.astype(np.float64) ** 2, axis=1)) + 1e-12)
-    voiced = frame_db > -50
+    hop = max(1, int(sr * FRAME_MS / 1000))
+    voiced = active_frames(x, sr)
     if not voiced.any():
         checks.append(_check("speech_present", "fail", None, "整段音频近似静音"))
         return checks
     # 帧掩码映射回采样级（尾部不足一帧的采样沿用最后一帧状态）
-    sample_voiced = np.repeat(voiced, hop)
-    sample_voiced = np.concatenate([sample_voiced, np.full(len(x) - len(sample_voiced), voiced[-1])])
+    sample_voiced = np.repeat(voiced, hop)[:len(x)]
     speech_db = _db(np.sqrt(np.mean(x[sample_voiced].astype(np.float64) ** 2)))
+    checks.append(_check("active_signal_seconds", "info", round(active_seconds(x, sr), 4),
+                         "10ms RMS>-50dBFS；不是语音识别/VAD"))
     checks.append(_check("loudness_rms", "pass" if -26 <= speech_db <= -14 else "warn",
                          round(speech_db, 2), "有声段 RMS dBFS，目标约 -20"))
 
@@ -146,15 +154,15 @@ def _to_simplified(s):
     return OpenCC("t2s").convert(s)
 
 
-def reference_text(text, lexicon=None):
+def reference_text(text, lexicon=None, language="zh", spoken=False):
     """朗读形式参考文本（规范化 + 词典 + 去标点）。
 
     与 speech_rate 共用同一口径，避免两处字符数不一致。
     """
-    return _PUNCT.sub("", normalize_zh(text, lexicon))
+    return _PUNCT.sub("", text if spoken else normalize_text(text, language, lexicon)).casefold()
 
 
-def run_asr_check(path, expected_text, model_size, profile, lexicon=None):
+def _run_asr_check(path, expected_text, model_size, profile, lexicon=None, language="zh", spoken=False):
     def _skip(reason):
         return [_check("asr_cer", "skip", None, reason)]
     try:
@@ -174,15 +182,24 @@ def run_asr_check(path, expected_text, model_size, profile, lexicon=None):
         from math import gcd
         g = gcd(16000, sr)
         x = resample_poly(x, 16000 // g, sr // g).astype(np.float32)
-    segs, _ = model.transcribe(x, language="zh", beam_size=5, vad_filter=False,
-                               initial_prompt="以下是普通话的句子。")  # 提示简体输出
+    lang = language.replace("_", "-").split("-")[0]
+    if lang == "cmn":
+        lang = "zh"
+    if lang == "auto":
+        lang = None
+    segs, _ = model.transcribe(x, language=lang, beam_size=5, vad_filter=False)
     hyp_raw = "".join(s.text for s in segs)
-    ref = reference_text(expected_text, lexicon)
+    ref = reference_text(expected_text, lexicon, language, spoken)
+    if not ref:
+        return _skip("无可比较参考字符")
+    if len(ref) > 5000 or len(hyp_raw) > 10000:
+        return _skip("CER编辑距离输入超过本实现上限；请分章节验收")
     # 回听文本只做繁转简 + 去标点；数字串保留 ASR 原样
-    hyp = _PUNCT.sub("", _to_simplified(hyp_raw))
+    decoded = _to_simplified(hyp_raw) if lang == "zh" else hyp_raw
+    hyp = _PUNCT.sub("", decoded).casefold()
     # whisper 会把听到的中文数字写成阿拉伯数字，必须读回中文才能与朗读形式参考文本对齐；
     # 这一步使 asr_cer 无法区分“读法对”与“数字串对”，故另给两个不受该影响的量。
-    hyp_canon = _PUNCT.sub("", normalize_zh(_to_simplified(hyp_raw)))
+    hyp_canon = reference_text(decoded, language=language)
     cer = _cer(ref, hyp_canon)
     cer_text = _cer(mask_numbers(ref), mask_numbers(hyp))
     ref_num = "".join(_MASK_NUM.findall(ref))
@@ -191,26 +208,37 @@ def run_asr_check(path, expected_text, model_size, profile, lexicon=None):
     status = "pass" if cer <= profile["cer_warn"] else ("warn" if cer <= profile["cer_fail"] else "fail")
     checks = [_check("asr_cer", status, round(cer, 4),
                      f"回听识别 CER（模型 {model_size}）；ASR 文本：{hyp_raw[:80]}")]
+    checks[0].update(reference_text=ref, hypothesis_text=hyp_raw, canonical_hypothesis=hyp_canon,
+                     language=lang, threshold_basis="uncalibrated_heuristic")
+    if lang == "zh":
+        import importlib.util
+        checks[0]["opencc_available"] = importlib.util.find_spec("opencc") is not None
+    if lang != "zh":
+        return checks  # Chinese number masking is not a multilingual metric
     # 以下两项为诊断量，不参与退出码判定
-    checks.append(_check("asr_cer_text", "info", round(cer_text, 4),
-                         "遮蔽数词后的 CER（衡量非数字部分的发音，不受规范化链路影响）"))
+    checks.append(_check("asr_cer_text", "info", None if cer_text is None else round(cer_text, 4),
+                         "中文启发式遮蔽数词CER；存在误遮蔽/残留，非独立发音真值"))
     checks.append(_check("asr_num_cer", "info", None if num_cer is None else round(num_cer, 4),
                          f"仅数词部分的 CER（参考数词 {len(ref_num)} 字；"
                          f"只能验证听到的数字串，不能验证朗读风格）"))
     return checks
 
 
-# 阈值依据：default 的 0.10/0.25 是在 9 条用例、2 个中文模型、whisper-small 回听下，
-# 与“人工可接受”粗略对齐后选定的经验值；实测单次运行的逐条波动可达 0.08
-# （见 references/eval-results.md 第 6 节），因此 strict 的 0.05 低于噪声水平，
-# 仅在多次重复取均值后使用。
+def run_asr_check(path, expected_text, model_size, profile, lexicon=None, language="zh", spoken=False):
+    try:
+        return _run_asr_check(path, expected_text, model_size, profile, lexicon, language, spoken)
+    except Exception as e:
+        return [_check("asr_cer", "skip", None, f"ASR 不可用：{type(e).__name__}: {e}")]
+
+
+# Uncalibrated engineering heuristics, not human acceptance or significance bounds.
 PROFILES = {
     "default": {"cer_warn": 0.10, "cer_fail": 0.25},
     "strict": {"cer_warn": 0.05, "cer_fail": 0.15},
 }
 
 
-def main(argv=None):
+def _main(argv=None):
     p = argparse.ArgumentParser(description="TTS 音频验收")
     p.add_argument("audio", help="待检查音频")
     p.add_argument("--text", help="期望朗读的原文（用于字数/时长与回听比对）")
@@ -218,12 +246,16 @@ def main(argv=None):
     p.add_argument("--asr", metavar="MODEL", help="启用回听识别，如 base / small（需 faster-whisper）")
     p.add_argument("--lexicon", help="与合成时相同的发音词典，使参考文本与朗读形式一致")
     p.add_argument("--profile", choices=list(PROFILES), default="default",
-                   help="default: warn 0.10 / fail 0.25；strict: 0.05 / 0.15（低于单次运行噪声，"
-                        "需多次重复取均值后使用）")
+                   help="default: warn 0.10 / fail 0.25；strict: 0.05 / 0.15；未校准启发式，非自然度或显著性标准")
+    p.add_argument("--language", default="auto", help="期望语言，auto 为脚本启发式")
+    p.add_argument("--synthesis-report", help="用本次合成报告的精确 normalized_text 与语言验收")
     p.add_argument("--report", help="JSON 报告输出路径")
     args = p.parse_args(argv)
 
     path = Path(args.audio)
+    if args.report and any(Path(args.report).resolve() == Path(src).resolve() for src in
+                           (args.audio, args.text_file, args.lexicon, args.synthesis_report) if src):
+        raise ValueError("QA报告不能覆盖音频或其他输入")
     if not path.is_file():
         print(json.dumps({"ok": False, "error": f"文件不存在：{path}"}, ensure_ascii=False))
         return 2
@@ -236,21 +268,48 @@ def main(argv=None):
     expected = args.text
     if args.text_file:
         expected = Path(args.text_file).read_text(encoding="utf-8")
+    spoken = False
+    language = args.language
+    if args.synthesis_report:
+        synthesis = json.loads(Path(args.synthesis_report).read_text(encoding="utf-8"))
+        import hashlib
+        with path.open("rb") as f:
+            digest = hashlib.file_digest(f, "sha256").hexdigest()
+        if synthesis.get("output_sha256") != digest:
+            raise ValueError("合成报告的输出哈希与待验收音频不符")
+        expected = synthesis["normalized_text"]
+        language = synthesis["language"]
+        spoken = True
+    if language == "auto" and expected:
+        language = detect_language(expected)
+    lex = load_lexicon(args.lexicon) if args.lexicon else None
     checks = run_signal_checks(x, sr, info)
+    if info.channels > 1:
+        import soundfile as sf
+        raw, _ = sf.read(str(path), dtype="float32", always_2d=True)
+        ratio = float(np.mean(np.abs(raw) >= .999))
+        checks.append(_check("channel_clipping", "fail" if ratio > 5e-4 else "warn" if ratio else "pass", ratio))
+        checks.append(_check("multichannel", "warn", info.channels, "单声道混合可能掩盖反相；需逐通道复核"))
 
     if expected:
-        ref_chars = len(reference_text(expected, load_lexicon(args.lexicon) if args.lexicon else None))
-        rate = ref_chars / (len(x) / sr)
-        checks.append(_check("speech_rate_chars_per_s", "pass" if 1.5 <= rate <= 8 else "warn",
-                             round(rate, 2), f"规范化后字符数 {ref_chars}；合理范围约 1.5–8 字/秒"))
+        ref_chars = len(reference_text(expected, lex, language, spoken))
+        active = active_seconds(x, sr)
+        rate = ref_chars / active if active > 0 else None
+        checks.append(_check("speech_rate_chars_per_s", "info", None if rate is None else round(rate, 2),
+                             f"{ref_chars}规范化字符/有效信号秒；不含静音，非语音VAD，无通用语言阈值"))
+        checks.append(_check("delivery_rate_chars_per_s", "info", round(ref_chars / (len(x) / sr), 2) if len(x) else None,
+                             "字符/成品总秒数，包含静音，不等同发声速度"))
     if args.asr and expected:
         checks += run_asr_check(path, expected, args.asr, PROFILES[args.profile],
-                                load_lexicon(args.lexicon) if args.lexicon else None)
+                                lex, language, spoken)
     elif args.asr:
         checks.append(_check("asr_cer", "skip", None, "回听需要 --text 或 --text-file"))
 
     fails = [c for c in checks if c["status"] == "fail"]
-    report = {"file": str(path), "ok": not fails, "profile": args.profile, "checks": checks}
+    report = {"file": str(path), "ok": not fails, "profile": args.profile, "language": language, "checks": checks,
+              "validation": {"human_listening": "not_performed", "asr": "not_requested" if not args.asr else
+                  "skipped" if any(c["name"] == "asr_cer" and c["status"] == "skip" for c in checks) else "performed"},
+              "threshold_basis": "uncalibrated_heuristic"}
     text = json.dumps(report, ensure_ascii=False, indent=2)
     if args.report:
         rp = Path(args.report)
@@ -258,6 +317,14 @@ def main(argv=None):
         rp.write_text(text, encoding="utf-8")
     print(text)
     return 1 if fails else 0
+
+
+def main(argv=None):
+    try:
+        return _main(argv)
+    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as e:
+        print(json.dumps({"ok": False, "error": f"验收输入错误：{e}"}, ensure_ascii=False))
+        return 2
 
 
 if __name__ == "__main__":
