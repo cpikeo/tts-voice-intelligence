@@ -1,0 +1,3 @@
+# Optional, pinned Piper Python engine and Chinese pinyin frontend.
+# The voice ONNX assets are NOT bundled here; use --piper-voice with the audited catalog.
+piper-tts[zh]==1.8.0

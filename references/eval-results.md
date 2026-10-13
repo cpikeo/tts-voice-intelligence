@@ -14,10 +14,13 @@
 # 无模型回归测试；skip 是未执行，不是通过
 python3 -m pytest -q -rs
 
-# Piper：先由用户核对模型许可并准备 .onnx + 同名 .onnx.json
+# Piper 本地模型集成测试（保留兼容路径）
 TTS_PIPER_MODEL=/path/to/model.onnx python3 -m pytest -q tests/test_piper_integration.py
 python3 tests/run_eval.py --engine piper --model /path/to/model.onnx \
   --out validation/piper-run --repeat 3
+
+# 固定中文语音首次资产供给（需要安装 requirements-piper.txt、审阅许可并联网）
+python3 scripts/tts.py check --piper-voice zh_CN-chaowen-medium --accept-model-license
 
 # eSpeak NG：需要先安装系统包；地区与用例须匹配
 python3 tests/run_eval.py --engine espeak --language en-US \

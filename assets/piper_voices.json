@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "catalog_policy": "Only commit-pinned HTTPS assets with recorded SHA-256 values are eligible. Do not add a default voice until both license scope and audition are approved.",
+  "voices": {
+    "zh_CN-chaowen-medium": {
+      "repo_id": "rhasspy/piper-voices",
+      "revision": "10eb5c756ae21b759c8344d54aef86f9399ae92d",
+      "language": "zh-CN",
+      "speaker_count": 1,
+      "quality_label": "medium (model size label; not a quality guarantee)",
+      "model": {
+        "path": "zh/zh_CN/chaowen/medium/zh_CN-chaowen-medium.onnx",
+        "filename": "zh_CN-chaowen-medium.onnx",
+        "size": 63221984,
+        "sha256": "820d64ac16048fbcf38dd0823d37fab5f5e0c2bd71b01ca5a50f553fac19e746"
+      },
+      "config": {
+        "path": "zh/zh_CN/chaowen/medium/zh_CN-chaowen-medium.onnx.json",
+        "filename": "zh_CN-chaowen-medium.onnx.json",
+        "size": 2699,
+        "sha256": "5a8dda00084d3cdbfe4fcfefac5e78935f79af16452c35c70c337bdcef7cc755"
+      },
+      "license": {
+        "repo_license_metadata": "MIT",
+        "dataset_license_in_model_card": "CC0",
+        "weight_license_note": "The pinned Hugging Face repository README declares MIT and the voice MODEL_CARD says the training dataset is CC0; the voice card does not separately restate a weight-specific license. This entry is opt-in, not an unconditional/default voice. Review the pinned sources for the intended use before accepting.",
+        "policy_id": "chaowen-repo-mit-dataset-cc0-review-v1",
+        "license_sources": [
+          {
+            "name": "piper-voices repository README (license metadata)",
+            "repo_id": "rhasspy/piper-voices",
+            "revision": "10eb5c756ae21b759c8344d54aef86f9399ae92d",
+            "filename": "licenses/piper-voices-README.md",
+            "url": "https://huggingface.co/rhasspy/piper-voices/resolve/10eb5c756ae21b759c8344d54aef86f9399ae92d/README.md",
+            "size": 497,
+            "sha256": "33e93643fce5180886300f9f0070eeeab8af148efb8e84361f8904def80fd9fb"
+          },
+          {
+            "name": "Chaowen MODEL_CARD (speaker count and dataset terms)",
+            "repo_id": "rhasspy/piper-voices",
+            "revision": "10eb5c756ae21b759c8344d54aef86f9399ae92d",
+            "filename": "licenses/chaowen-MODEL_CARD",
+            "url": "https://huggingface.co/rhasspy/piper-voices/resolve/10eb5c756ae21b759c8344d54aef86f9399ae92d/zh/zh_CN/chaowen/medium/MODEL_CARD",
+            "size": 273,
+            "sha256": "7155212ec9192b1201898500621ae562dc5eeb6d90fa183f3267cd06dc7d5b6b"
+          },
+          {
+            "name": "piper-checkpoints README (g2pW source terms)",
+            "repo_id": "rhasspy/piper-checkpoints",
+            "revision": "0d8f505885b1fd426191b9d09d9b38f4e11408a0",
+            "filename": "licenses/piper-checkpoints-README.md",
+            "url": "https://huggingface.co/datasets/rhasspy/piper-checkpoints/resolve/0d8f505885b1fd426191b9d09d9b38f4e11408a0/README.md",
+            "size": 103,
+            "sha256": "1ab8e432f4470be0e14b23f6c78a9341aa3f7e2c1b42381bdf3dc62686dd6797"
+          },
+          {
+            "name": "BERT tokenizer model card (license metadata)",
+            "repo_id": "google-bert/bert-base-chinese",
+            "revision": "8f23c25b06e129b6c986331a13d8d025a92cf0ea",
+            "filename": "licenses/bert-base-chinese-README.md",
+            "url": "https://huggingface.co/google-bert/bert-base-chinese/resolve/8f23c25b06e129b6c986331a13d8d025a92cf0ea/README.md",
+            "size": 1923,
+            "sha256": "80efb5c88f6c09c0f4b2f91380852a374f023e195954f21ff7221928487ce454"
+          }
+        ]
+      },
+      "frontend": {
+        "g2pw_archive": {
+          "repo_id": "rhasspy/piper-checkpoints",
+          "revision": "0d8f505885b1fd426191b9d09d9b38f4e11408a0",
+          "path": "zh/zh_CN/_resources/g2pw.tar.gz",
+          "size": 112991734,
+          "sha256": "252c6f561c11014fbb243d70aec993a816d82109887b91edcda0261ab9967060",
+          "repository_license_metadata": "MIT"
+        },
+        "g2pw_version": {
+          "archive_member": "version",
+          "filename": "g2pw.version",
+          "size": 5,
+          "sha256": "517036ffbc4858eba27a01b85badcfd5e5c2a59a3d35d1898ab34567f818e799"
+        },
+        "g2pw_files": [
+          {
+            "name": "g2pw_model",
+            "archive_member": "g2pw.onnx",
+            "filename": "g2pw.onnx",
+            "size": 159287362,
+            "sha256": "367b87bfb59826590d1d85bd19a21d46aad3332fb364eca0c61d93cabe1d0323"
+          },
+          {
+            "name": "g2pw_polyphonic",
+            "archive_member": "POLYPHONIC_CHARS.txt",
+            "filename": "POLYPHONIC_CHARS.txt",
+            "size": 102449,
+            "sha256": "b63cd02d842dbaea32ca55b3fbbdef986a617854967cc2fb9ec1f2126715b747"
+          },
+          {
+            "name": "g2pw_monophonic",
+            "archive_member": "MONOPHONIC_CHARS.txt",
+            "filename": "MONOPHONIC_CHARS.txt",
+            "size": 120779,
+            "sha256": "e46c9190330e95757573159eef921a577849426728e72c0e6a427f9e4c00b31e"
+          },
+          {
+            "name": "g2pw_config",
+            "archive_member": "config.py",
+            "filename": "config.py",
+            "size": 398,
+            "sha256": "c4b5554ec6d9ed5815fb0c3e6539a4fbe653e99679d6a6f6dde5e69772e31403",
+            "source_size": 347,
+            "source_sha256": "b6154e494355d14a8d2c8a38d07720f77b34479e26aab21a5f63495ae904da76",
+            "patch": "Replace only model_source='bert-base-chinese' with a __file__-relative local tokenizer directory and prepend import os; all other pinned source bytes remain unchanged."
+          }
+        ],
+        "g2pw_lookup_tables": {
+          "repo_id": "GitYCC/g2pW",
+          "revision": "36c3fcce93aebfcb54803d2ad6677023a28ad950",
+          "license": "Apache-2.0 (GitHub repository metadata; g2pw 0.1.1 PyPI metadata)",
+          "license_reference": "https://pypi.org/project/g2pw/0.1.1/",
+          "files": [
+            {
+              "name": "g2pw_bopomofo_to_pinyin",
+              "path": "g2pw/bopomofo_to_pinyin_wo_tune_dict.json",
+              "filename": "bopomofo_to_pinyin_wo_tune_dict.json",
+              "size": 7739,
+              "sha256": "0fe90e26be7653023772b3ad2d08952961bbf295fb39ba685c7172d3d9769f52"
+            },
+            {
+              "name": "g2pw_char_bopomofo",
+              "path": "g2pw/char_bopomofo_dict.json",
+              "filename": "char_bopomofo_dict.json",
+              "size": 1851164,
+              "sha256": "fbde8d392453612c814bb6728c6d5f52a1f9d38135a602ef98f821fa22d7f005"
+            },
+            {
+              "name": "g2pw_s2t_dictionary",
+              "path": "g2pw/bert-base-chinese_s2t_dict.txt",
+              "filename": "bert-base-chinese_s2t_dict.txt",
+              "size": 13999,
+              "sha256": "394822c43c43f53adc258aaf7feca6e8bd82a84ff7d02ee4a6adcf70b572f447"
+            }
+          ]
+        },
+        "bert_tokenizer": {
+          "repo_id": "google-bert/bert-base-chinese",
+          "revision": "8f23c25b06e129b6c986331a13d8d025a92cf0ea",
+          "license": "Apache-2.0",
+          "files": [
+            {
+              "name": "bert_vocab",
+              "path": "vocab.txt",
+              "filename": "bert-base-chinese/vocab.txt",
+              "size": 109540,
+              "sha256": "45bbac6b341c319adc98a532532882e91a9cefc0329aa57bac9ae761c27b291c"
+            },
+            {
+              "name": "bert_tokenizer_config",
+              "path": "tokenizer_config.json",
+              "filename": "bert-base-chinese/tokenizer_config.json",
+              "size": 49,
+              "sha256": "0f6d13e6f4da6f9e24f22ada6bc3be571123d858d7c0c05a8a7cd55a9c23c2e8"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

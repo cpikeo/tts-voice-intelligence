@@ -3,11 +3,9 @@ numpy>=1.24
 soundfile>=0.12
 
 # 可选组件（按需安装，见 README.md）
-# 引擎（piper，GPL-3.0-or-later；模型自备）：
-#   pip install piper-tts
-#   xiao_ya 等 g2pW 中文前端模型还需：
-#   pip install unicode-rbnf sentence-stream transformers tokenizers
-#   pip install --no-deps g2pw
+# 固定 Piper 中文前端（GPL-3.0-or-later；模型资产首次从固定清单自动下载并缓存）：
+#   pip install -r requirements-piper.txt
+# 当前固定目录只收录显式 opt-in 的 Chaowen；不含许可未知/非商业候选。
 # 回听验收（qa.py --asr）：
 #   pip install faster-whisper scipy opencc-python-reimplemented
 # 运行测试：

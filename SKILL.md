@@ -1,9 +1,9 @@
 ---
 name: tts-voice-intelligence
 description: 独立多引擎语音智能 Skill。用于朗读、配音、旁白、多语言 TTS、授权声音克隆及音频验收。先理解表达意图，再按真实引擎能力制定声音策略，执行规范化、分段、合成、必要处理、分层验收与针对性修复。Piper 与 eSpeak NG 可本地运行；XTTS 仅用户本地模型与有效授权，不保证情绪、跨语言音色稳定或专业听感。
-compatibility: Python 3.13 已验证；numpy、soundfile 必需。引擎与 ASR 均为可选依赖；模型由用户提供，CPU 可用，GPU 和真实 XTTS 克隆未验证。
+compatibility: Python 3.13 已验证；numpy、soundfile 必需。引擎与 ASR 均为可选依赖；固定 Piper 音色可首次联网自动获取并缓存，其他模型仍可走本地路径；CPU 可用，GPU 和真实 XTTS 克隆未验证。
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
 ---
 
 # TTS Voice Intelligence
@@ -38,11 +38,15 @@ python scripts/tts.py check --engine espeak --language en-US
 
 读取实例 `capabilities` 与可用性，不从项目支持语言列表推断某个模型支持全部语言。地区不匹配时拒绝，不能静默降级；具体依赖与矩阵按需读 `references/engines.md`。软件、模型、数据许可分别核对；许可未知不可默认可商用。
 
+**Piper 固定资产自动供给**：用户不需手动给出登记音色的 `.onnx` 与 `.onnx.json`；用 `--piper-voice <已审核ID>` 首次联网下载、校验、缓存。资产来源/提交、模型与配置及中文 g2pW/tokenizer 每个文件的 SHA-256 都固定记录在 `assets/piper_voices.json`。g2pW tar 仅解出白名单普通文件，配置只做固定的本地 tokenizer 路径补丁；阻止 Piper 在运行时另从可变地址隐式取资源。资产目录原子安装，缓存再次使用由 `PiperEngine` 对全部活动模型/前端资源做 SHA-256 绑定；同尺寸篡改会触发一次同版本完整修复，修复失败就报错。无网络且没有可验证缓存时清楚失败，不跳段、不静默换引擎。模型权重不随技能包仓库内置。
+
+当前自动目录只含单说话人 `zh_CN-chaowen-medium`：仓库 README 元数据标 MIT，固定 voice 卡的数据集标 CC0，但 voice 卡没有另行写明权重许可，因此它是显式 ID + 首次 `--accept-model-license` 的 opt-in 候选，不是默认商用承诺。Xiao Ya（非商业）和 Huayan（Unknown）未登记。当前没有第二个许可范围足够清晰、且已试听的中文单说话人候选；不得把这个单音色冒称为 EP001 双角色方案。
+
 **克隆先授权、验签、绑定资产，再安全加载**：
 - 仅本人或有效授权；收集用途范围、语言范围、有效期、撤销状态、授权证据标识、参考和模型哈希及模型许可，拒绝未替换的模板占位符。
 - 支持 HMAC-SHA256 授权签名核验（`--require-signed-auth` 或 `TTS_AUTH_SIGNING_KEY`）；无外部公钥/CA 体系时，本地 JSON 或对称签名仍不等同法律公证。
 - 参考音频单次读入内存完成 SHA256 校验与信号检查（单声道、≥16kHz、3–30s、无削波、有效信号≥2s且≥50%），消除检查与解码间 TOCTOU；但信号门槛不自动证明单说话人或身份，人工确认才设置 `reference_reviewed`。
-- 模型与配置加载前执行静态安全筛查（危险 pickle 全局调用、ZIP 路径穿越、远程/穿越配置路径、ONNX 外部路径穿越）。Piper：加载前记录资产 SHA256、加载后复核；流水线对每个合成批次开始/结束各做一次完整 SHA256，段内复用已加载的内存模型（不以文件元数据替代哈希）；直接单段调用仍做完整前后复核。XTTS：每段开始复核授权与模型/配置/参考绑定，段后复核参考资产。可选 `--isolate-model` 在独立离线子进程组中隔离执行。
+- 模型与配置加载前执行静态安全筛查（危险 pickle 全局调用、ZIP 路径穿越、远程/穿越配置路径、ONNX 外部路径穿越）。Piper：加载前记录活动模型/配置及托管中文前端资产 SHA256、加载后复核；流水线对每个合成批次开始/结束各做一次完整 SHA256，段内复用已加载的内存模型（不以文件元数据替代哈希）；直接单段调用仍做完整前后复核。XTTS：每段开始复核授权与模型/配置/参考绑定，段后复核参考资产。可选 `--isolate-model` 在独立离线子进程组中隔离执行。
 
 ### 4. 规范化与上下文编排
 

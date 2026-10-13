@@ -24,6 +24,10 @@ class EngineTimeoutError(EngineError):
     """引擎超时；是否能硬终止由适配器和原生调用边界决定。"""
 
 
+class ModelAssetIntegrityError(EngineError):
+    """A pinned model or frontend asset failed its expected SHA-256 check."""
+
+
 DEFAULT_TIMEOUT = 60.0
 
 _FORBIDDEN_PICKLE_MODULES = {
@@ -371,13 +375,26 @@ class Engine:
         raise NotImplementedError
 
 
+def _verify_expected_asset(path, expected_sha256, *, label):
+    """Full streaming SHA-256 check without retaining large frontend models in memory."""
+    p = Path(path)
+    st = _path_stat(p)
+    fp = {"path": str(p), **_fingerprint_stat(st), "sha256": expected_sha256}
+    try:
+        verify_bound_asset(fp)
+    except EngineError as exc:
+        raise ModelAssetIntegrityError(f"固定 Piper 前端资产 SHA-256/稳定文件标识校验失败（{label}）：{exc}") from exc
+    return fp
+
+
 class PiperEngine(Engine):
     """Piper（ONNX，CPU 可跑）。注意：piper-tts 包为 GPL-3.0-or-later。"""
     name = "piper"
 
     def __init__(self, model, config=None, speaker=None, length_scale=1.0,
                  noise_scale=0.667, noise_w_scale=0.8, use_cuda=False, download_dir=None,
-                 language="auto", timeout=DEFAULT_TIMEOUT):
+                 language="auto", timeout=DEFAULT_TIMEOUT, expected_asset_sha256=None,
+                 additional_asset_paths=None):
         self.timeout = _validate_timeout(timeout)
         try:
             from piper import PiperVoice
@@ -396,7 +413,36 @@ class PiperEngine(Engine):
             raise EngineError(f"找不到模型配置文件：{cfg}（需与 .onnx 同名的 .onnx.json）")
         cfg_bytes, cfg_fp = _read_and_fingerprint(cfg, max_bytes=10 * 1024 * 1024)
         model_bytes, model_fp = _read_and_fingerprint(model)
+        expected_asset_sha256 = dict(expected_asset_sha256 or {})
+        for key, fp in (("model", model_fp), ("config", cfg_fp)):
+            expected = expected_asset_sha256.get(key)
+            if expected is not None and fp["sha256"] != expected:
+                raise ModelAssetIntegrityError(
+                    f"固定 Piper {key} SHA-256 不匹配：期望 {expected}，实际 {fp['sha256']}；"
+                    "拒绝加载未验证模型"
+                )
+        additional_asset_paths = dict(additional_asset_paths or {})
+        additional_fps = {}
+        for key, path in additional_asset_paths.items():
+            if key in ("model", "config", "safety") or key not in expected_asset_sha256:
+                raise EngineError(f"Piper 前端资产清单缺少/重复 SHA-256：{key}")
+            additional_fps[key] = _verify_expected_asset(
+                path, expected_asset_sha256[key], label=key,
+            )
         data = json.loads(cfg_bytes.decode("utf-8"))
+        if data.get("phoneme_type") == "pinyin":
+            required_frontend = {
+                "g2pw_model", "g2pw_config", "g2pw_polyphonic", "g2pw_monophonic",
+                "g2pw_bopomofo_to_pinyin", "g2pw_char_bopomofo",
+                "g2pw_s2t_dictionary", "bert_vocab", "bert_tokenizer_config",
+            }
+            missing_frontend = required_frontend - set(additional_fps)
+            if missing_frontend:
+                raise EngineError(
+                    "Piper pinyin 模型需要固定校验的完整 g2pW/BERT 前端资产；"
+                    f"缺少 {', '.join(sorted(missing_frontend))}。"
+                    "拒绝让 Piper 在运行时从可变地址隐式下载。请使用审核目录中的 --piper-voice。"
+                )
         safety = inspect_model_safety(model, cfg, engine="piper", model_bytes=model_bytes, config_data=data)
         locale = language_tag(data.get("language", {}).get("code", "unknown"))
         requested = language_tag(language)
@@ -410,6 +456,7 @@ class PiperEngine(Engine):
                 not np.isfinite(n) or n < 0 for n in (noise_scale, noise_w_scale)):
             raise EngineError("无效 Piper 合成参数")
         self.bound_assets = {"model": model_fp, "config": cfg_fp, "safety": safety}
+        self.bound_assets.update(additional_fps)
         self.capabilities = {
             "languages": [locale], "selected_language": locale,
             "voice": "model fixed", "speakers": count, "rate": True,
@@ -418,7 +465,7 @@ class PiperEngine(Engine):
             "timeout_seconds": self.timeout, "asset_binding": True, "model_safety_check": True,
             "dependencies": ["piper-tts", "onnxruntime"],
             "software_license": "GPL-3.0-or-later", "model_license": "user must verify model card",
-            "resources": "model/config required; zh frontend may fetch resources",
+            "resources": "model/config required; pinyin voices require pinned g2pW/BERT assets; no dynamic frontend fallback",
         }
         self.config_path = str(cfg)
         # 中文模型的 g2pW 资源默认会下载到 CWD；显式指定为模型同目录，避免污染工作区
@@ -426,8 +473,9 @@ class PiperEngine(Engine):
             PiperVoice.load, self.timeout, str(model), str(cfg),
             use_cuda=use_cuda, download_dir=str(download_dir or model.parent),
         )
-        verify_bound_asset(model_fp)
-        verify_bound_asset(cfg_fp)
+        for name, fingerprint in self.bound_assets.items():
+            if name != "safety" and isinstance(fingerprint, dict) and "sha256" in fingerprint:
+                verify_bound_asset(fingerprint)
         self.sample_rate = self.voice.config.sample_rate
         self.syn = SynthesisConfig(
             speaker_id=speaker,
@@ -442,10 +490,11 @@ class PiperEngine(Engine):
         return True, f"piper model={self.model_path} sr={self.sample_rate}"
 
     def verify_integrity(self):
-        """Full SHA256 checkpoint used after synthesis (and after direct capture batches)."""
+        """Full SHA256 checkpoint used before/after a synthesis batch."""
         if hasattr(self, "bound_assets"):
-            verify_bound_asset(self.bound_assets["model"])
-            verify_bound_asset(self.bound_assets["config"])
+            for name, fingerprint in self.bound_assets.items():
+                if name != "safety" and isinstance(fingerprint, dict) and "sha256" in fingerprint:
+                    verify_bound_asset(fingerprint)
 
     def _synthesize_loaded(self, text):
         """One segment from the already loaded, immutable in-memory Piper session.

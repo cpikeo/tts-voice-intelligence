@@ -129,3 +129,14 @@ git checkout -- README.md SKILL.md references/engines.md references/eval-results
   tests/ab_processing.py tests/test_audio_quality.py tests/test_intelligence.py tests/test_pipeline.py
 rm -f OPTIMIZATION.md tests/benchmark_hotpaths.py
 ```
+
+## 2026-10-13 增补：Piper 固定模型首次供给
+
+这是后续功能改动，不是上一节真实 TTS 性能基准的一部分。保留的优化原则仍是：只减少重复工作，不跳过哈希、不弱化许可/安全或音频验收。
+
+- **问题**：原有 `PiperEngine` 只接受本地 `.onnx`/`.onnx.json`，而中文 Pinyin 模型还会引出 Piper 自己对可变 g2pW 地址和 BERT tokenizer 的隐式下载；简单下载两个文件并不足以做到可审计、离线复用与供应链完整性。
+- **改动**：新增 `scripts/piper_assets.py` + `assets/piper_voices.json`，仅列固定提交/HTTPS 来源；模型、配置、g2pW archive 与解包文件、lookup tables、tokenizer 各自逐文件 SHA-256；配置小补丁把 tokenizer 指向缓存内本地路径。首用需 `--piper-voice` 与 `--accept-model-license`；数据写入用户缓存，整包暂存后原子换目录。之后每次由引擎在已有加载/批次校验中验证所有活动文件，避免在缓存解析阶段重复读取大型 ONNX。Pinyin 本地模型缺完整固定前端时拒绝加载，不允许自动网络回退。
+- **预期收益**：普通使用者不用人工找/摆放 `.onnx` 和 `.onnx.json`；同一已审核 revision 可重现、可缓存；坏下载或同尺寸篡改不会进入推理，缓存损坏最多按同版本完整修复一次。仓库不携带模型权重。
+- **测试/实测**：本增补测试用小型本地 HTTP 响应 fixture 验证 SHA、许可闸门、重复缓存无网络、same-size 前端篡改识别、缓存许可快照篡改后按固定来源修复、失败下载不覆盖旧缓存、离线缺缓存报错。下载写入 `provisioning.json`；缓存复用时仅重新哈希体积很小的许可快照，目录仍是权威来源，大型活动资产继续由 PiperEngine 完整绑定，避免双重扫描。全套 pytest 在本次 provenance 接入与许可快照修复后复测为 **183 passed, 20 skipped**（`python3 -m pytest -q -rs`，1.76 秒）；其中 10 个真实 Piper 模型用例未设置 `TTS_PIPER_MODEL` 而跳过。**未安装 Piper 运行依赖、未把真实 voice/g2pW 资产写入工作缓存、未实际合成或试听；真实下载耗时、缓存大小、RTF 与声音质量均未实测。****
+- **质量影响**：不生成或修改 EP001 WAV，不声称 Piper 已运行/角色音色合格。当前仅一个单说话人候选，Chaowen 仓库 README metadata 为 MIT、voice card 的训练数据为 CC0，但 voice card 未单独表述权重许可；因此 opt-in、不做默认、不等于商业法律审查。Xiao Ya（非商业）和 Huayan（Unknown）没有登记。双角色条件仍未满足。
+- **回滚**：先保存当前全部 uncommitted diff；若只撤该功能，移除新增 `scripts/piper_assets.py`、`assets/piper_voices.json`、`requirements-piper.txt`、`tests/test_piper_assets.py`，并精确回滚 `scripts/engines.py` 中额外资产绑定、`scripts/tts.py` 中自动供给/CLI/provenance 改动，以及 README/SKILL/引擎/评测文档本次段落。不要直接运行前文历史 checkout 脚本：当前树已有多个此前保留的未提交优化，不可整体还原或覆盖。

@@ -20,13 +20,14 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from textnorm import load_lexicon, normalize_zh, normalize_text, detect_language, text_warnings  # noqa: E402
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 
 from engines import (  # noqa: E402
     DEFAULT_TIMEOUT,
     Engine,
     EngineError,
     EngineTimeoutError,
+    ModelAssetIntegrityError,
     EspeakEngine,
     PiperEngine,
     XTTSEngine,
@@ -34,6 +35,24 @@ from engines import (  # noqa: E402
     validate_authorization,
     verify_bound_asset,
 )
+from piper_assets import (  # noqa: E402
+    PiperAssetError,
+    ensure_piper_voice,
+    expected_voice_paths,
+)
+
+
+def _piper_zh_preflight():
+    """Fail before a ~180 MB first-use download if the optional Chinese extra is absent."""
+    try:
+        from piper import PiperVoice  # noqa: F401
+        from piper.config import SynthesisConfig  # noqa: F401
+        from piper.phonemize_chinese import ChinesePhonemizer  # noqa: F401
+    except ImportError as exc:
+        raise EngineError(
+            "此固定中文 Piper 音色使用 pinyin/g2pW 前端。请安装仓库锁定的可选依赖："
+            "pip install -r requirements-piper.txt；安装成功后再首次联网获取模型资产。"
+        ) from exc
 
 
 def build_engine(args):
@@ -41,10 +60,67 @@ def build_engine(args):
     if args.engine == "piper":
         if args.reference_audio or args.authorization:
             raise EngineError("Piper 不支持克隆")
-        return PiperEngine(model=args.model, config=args.config, speaker=args.speaker,
+        voice_id = getattr(args, "piper_voice", None)
+        model = getattr(args, "model", None)
+        config = getattr(args, "config", None)
+        if voice_id:
+            if model or config:
+                raise EngineError("--piper-voice 自动资产 ID 与 --model/--config 本地路径互斥")
+            _piper_zh_preflight()
+            try:
+                for attempt in range(2):
+                    assets = ensure_piper_voice(
+                        voice_id,
+                        cache_dir=getattr(args, "piper_cache_dir", None),
+                        accept_model_license=getattr(args, "accept_model_license", False),
+                        force_download=(attempt == 1),
+                        max_download_seconds=getattr(args, "download_timeout", 1200.0),
+                        progress=lambda message: print(message, file=sys.stderr),
+                    )
+                    try:
+                        engine = PiperEngine(
+                            model=assets.model_path, config=assets.config_path,
+                            speaker=getattr(args, "speaker", None),
+                            length_scale=args.length_scale, noise_scale=args.noise_scale,
+                            noise_w_scale=args.noise_w, use_cuda=args.cuda,
+                            download_dir=str(assets.voice_dir), language=args.language,
+                            timeout=timeout, expected_asset_sha256=assets.expected_sha256,
+                            additional_asset_paths=assets.additional_asset_paths,
+                        )
+                        engine.voice_manifest = assets.metadata
+                        engine.capabilities["model_license"] = assets.metadata["license"]
+                        engine.capabilities["resources"] = (
+                            "pinned ONNX/config + g2pW ONNX/config/tables + local BERT tokenizer; "
+                            "all active files SHA-256-bound before/after each synthesis batch"
+                        )
+                        return engine
+                    except ModelAssetIntegrityError:
+                        if attempt == 1:
+                            raise
+                        print(
+                            "检测到缓存资产 SHA-256 不符；按同一固定版本重新下载并原子替换一次。",
+                            file=sys.stderr,
+                        )
+                raise EngineError("Piper 固定资产恢复未完成")
+            except PiperAssetError as exc:
+                raise EngineError(str(exc)) from exc
+        if (getattr(args, "accept_model_license", False) or getattr(args, "piper_cache_dir", None)
+                or getattr(args, "download_timeout", 1200.0) != 1200.0):
+            raise EngineError("模型许可/缓存/下载超时参数仅适用于 --piper-voice")
+        if not model:
+            raise EngineError(
+                "Piper 需要本地 --model 路径，或已审核音色 ID --piper-voice；"
+                "固定目录/许可/哈希见 assets/piper_voices.json"
+            )
+        return PiperEngine(model=model, config=config, speaker=args.speaker,
                            length_scale=args.length_scale, noise_scale=args.noise_scale,
                            noise_w_scale=args.noise_w, use_cuda=args.cuda,
                            language=args.language, timeout=timeout)
+    if args.engine != "piper" and (
+            getattr(args, "piper_voice", None) or getattr(args, "piper_cache_dir", None)
+            or getattr(args, "accept_model_license", False)
+            or getattr(args, "download_timeout", 1200.0) != 1200.0):
+        raise EngineError("Piper 自动音色 ID、缓存、下载超时和许可确认参数仅适用于 Piper")
     if args.engine != "piper" and (args.noise_scale != .667 or args.noise_w != .8):
         raise EngineError("该适配器不支持 Piper 噪声参数")
     if args.engine == "espeak":
@@ -827,14 +903,25 @@ def cmd_check(args):
         e = build_engine(args)
         info["engines"][args.engine] = {"available": True, "info": e.available()[1],
                                         "capabilities": e.capabilities}
-        if getattr(args, "model", None):
+        model_path = getattr(e, "model_path", None) or getattr(args, "model", None)
+        if model_path:
             fingerprint = getattr(e, "bound_assets", {}).get("model") if args.engine == "piper" else None
-            info["engines"][args.engine]["model"] = model_provenance(args.model, fingerprint, verified=bool(fingerprint))
+            info["engines"][args.engine]["model"] = model_provenance(
+                model_path, fingerprint, verified=bool(fingerprint))
+        if args.engine == "piper" and getattr(e, "voice_manifest", None):
+            info["engines"][args.engine]["piper_voice"] = e.voice_manifest
     except Exception as e:  # noqa: BLE001 - check 必须给出诊断而不是抛栈
         info["engines"][args.engine] = {"available": False,
                                         "reason": f"{type(e).__name__}: {e}"}
     print(json.dumps(info, ensure_ascii=False, indent=2))
     return 0 if all(v["available"] for v in info["engines"].values()) else 2
+
+
+def _path_is_within(path, parent):
+    """Path containment check for not-yet-created output/cache paths."""
+    candidate = Path(path).expanduser().resolve()
+    root = Path(parent).expanduser().resolve()
+    return candidate == root or root in candidate.parents
 
 
 def _validate_outputs(out, formats):
@@ -854,7 +941,8 @@ def _run_isolated_subprocess_synth(args, raw_argv):
     filtered_argv = [a for a in raw_argv if a != "--isolate-model"]
     # Resolve all path arguments to absolute paths because child runs in an isolated empty temp cwd
     path_flags = {"--model", "--config", "--input", "--out", "--report", "--lexicon",
-                  "--reference-audio", "--authorization", "--direction", "--checkpoint-dir"}
+                  "--reference-audio", "--authorization", "--direction", "--checkpoint-dir",
+                  "--piper-cache-dir"}
     resolved_argv = []
     i = 0
     while i < len(filtered_argv):
@@ -874,11 +962,17 @@ def _run_isolated_subprocess_synth(args, raw_argv):
         "TRANSFORMERS_OFFLINE": "1",
         "PYTHONNOUSERSITE": "1",
     }
-    for k in ("PYTHONPATH", "VIRTUAL_ENV", "LD_LIBRARY_PATH", "TTS_AUTH_SIGNING_KEY", "TTS_REQUIRE_SIGNED_AUTH"):
+    for k in ("PYTHONPATH", "VIRTUAL_ENV", "LD_LIBRARY_PATH", "TTS_AUTH_SIGNING_KEY",
+              "TTS_REQUIRE_SIGNED_AUTH", "XDG_CACHE_HOME", "TTS_PIPER_OFFLINE"):
         if k in os.environ:
             env[k] = os.environ[k]
 
     total_timeout = max(float(args.timeout or DEFAULT_TIMEOUT) * 4.0, 120.0)
+    # A first-use managed Piper voice has a separate 20-minute soft network budget. The isolated
+    # child still has a hard outer deadline, but it must not kill a legitimate pinned download at
+    # the ordinary model-load cap. A killed staging directory is recovered under the cache lock.
+    if args.engine == "piper" and getattr(args, "piper_voice", None):
+        total_timeout += float(getattr(args, "download_timeout", 1200.0)) + 60.0
     with tempfile.TemporaryDirectory(prefix="tts_isolated_") as iso_cwd:
         proc = subprocess.Popen(
             [sys.executable, str(Path(__file__).resolve()), *resolved_argv],
@@ -930,6 +1024,17 @@ def cmd_synth(args):
             destinations.append(Path(args.report))
         sources = [Path(v) for v in (args.input, args.model, args.config, args.lexicon,
                                     args.reference_audio, args.authorization, args.direction) if v]
+        managed_voice_paths = None
+        if args.engine == "piper" and getattr(args, "piper_voice", None):
+            try:
+                managed_voice_paths = expected_voice_paths(
+                    args.piper_voice, getattr(args, "piper_cache_dir", None))
+            except PiperAssetError as exc:
+                raise EngineError(str(exc)) from exc
+            sources.extend([managed_voice_paths["model_path"], managed_voice_paths["config_path"]])
+            sources.extend(managed_voice_paths["additional_asset_paths"].values())
+            if any(_path_is_within(d, managed_voice_paths["cache_root"]) for d in destinations):
+                raise ValueError("音频/报告输出不能写入 Piper 固定模型缓存目录")
         if args.engine == "piper" and args.model and not args.config:
             sources.append(Path(str(args.model) + ".json"))
         if len({p.resolve() for p in destinations}) != len(destinations) or any(
@@ -939,6 +1044,8 @@ def cmd_synth(args):
             ckpt_res = Path(args.checkpoint_dir).resolve()
             if any(ckpt_res == p.resolve() for p in destinations + sources):
                 raise ValueError("checkpoint-dir 不能与输入或输出路径冲突")
+            if managed_voice_paths and _path_is_within(ckpt_res, managed_voice_paths["cache_root"]):
+                raise ValueError("checkpoint-dir 不能写入 Piper 固定模型缓存目录")
         if args.processing == "minimal" and args.target_db != -20:
             raise ValueError("目标RMS参数仅在 --processing legacy 下生效（minimal 不做响度对齐）")
         engine = build_engine(args)
@@ -970,10 +1077,14 @@ def cmd_synth(args):
     report["created"] = _dt.datetime.now().astimezone().isoformat(timespec="seconds")
     report["skill_version"] = VERSION
     piper_assets = getattr(engine, "bound_assets", {}) if args.engine == "piper" else {}
-    report["model"] = model_provenance(getattr(args, "model", None), piper_assets.get("model"),
+    resolved_model_path = getattr(engine, "model_path", None) or getattr(args, "model", None)
+    report["model"] = model_provenance(resolved_model_path, piper_assets.get("model"),
                                        verified=bool(piper_assets.get("model")))
-    report["config"] = model_provenance(getattr(engine, "config_path", args.config), piper_assets.get("config"),
+    resolved_config_path = getattr(engine, "config_path", None) or getattr(args, "config", None)
+    report["config"] = model_provenance(resolved_config_path, piper_assets.get("config"),
                                          verified=bool(piper_assets.get("config")))
+    if getattr(engine, "voice_manifest", None):
+        report["piper_voice"] = engine.voice_manifest
     report["lexicon"] = model_provenance(args.lexicon) if args.lexicon else None
     report["runtime"] = {"python": sys.version.split()[0], "platform": platform.platform()}
     report["engine_params"] = ({"length_scale": args.length_scale, "noise_scale": args.noise_scale,
@@ -999,9 +1110,20 @@ def _failure_report(args, code, reason):
     rp = Path(args.report)
     protected = [args.out, args.input, args.model, args.config, args.lexicon,
                  args.reference_audio, args.authorization, args.direction]
+    managed_cache_root = None
     if args.engine == "piper" and args.model and not args.config:
         protected.append(str(args.model) + ".json")
-    if rp.suffix.lower() != ".json" or any(rp.resolve() == Path(p).resolve() for p in protected if p):
+    if args.engine == "piper" and getattr(args, "piper_voice", None):
+        try:
+            managed = expected_voice_paths(args.piper_voice, getattr(args, "piper_cache_dir", None))
+            managed_cache_root = managed["cache_root"]
+            protected.extend([managed["model_path"], managed["config_path"],
+                              *managed["additional_asset_paths"].values()])
+        except PiperAssetError:
+            return
+    if (rp.suffix.lower() != ".json"
+            or any(rp.resolve() == Path(p).resolve() for p in protected if p)
+            or (managed_cache_root is not None and _path_is_within(rp, managed_cache_root))):
         return
     try:
         _atomic_write_json(rp, {
@@ -1025,8 +1147,14 @@ def main(argv=None):
         sp.add_argument("--authorization", help="本地授权记录 JSON")
         sp.add_argument("--purpose", help="需与授权用途完全一致")
         sp.add_argument("--require-signed-auth", action="store_true", help="强制要求授权记录附带有效 HMAC-SHA256 签名")
-        sp.add_argument("--model", help="引擎模型路径（piper: .onnx）")
-        sp.add_argument("--config", help="模型配置（默认同名 .onnx.json）")
+        sp.add_argument("--model", help="本地引擎模型路径（piper: .onnx；可与自动下载 ID 二选一）")
+        sp.add_argument("--config", help="本地模型配置（默认同名 .onnx.json）")
+        sp.add_argument("--piper-voice", help="固定审核目录的 Piper 音色 ID；首次联网自动下载并缓存全部必需资产")
+        sp.add_argument("--piper-cache-dir", help="Piper 自动资产缓存目录（默认 ~/.cache/arena-tts/piper）")
+        sp.add_argument("--download-timeout", type=float, default=1200.0,
+                        help="首次固定 Piper 资产下载的软总时限秒数（默认 1200；网络单次读取 45s）")
+        sp.add_argument("--accept-model-license", action="store_true",
+                        help="首次使用前确认已审阅所选音色固定来源中的模型/数据许可")
         sp.add_argument("--speaker", type=int, default=None, help="多说话人模型的 speaker id")
         sp.add_argument("--length-scale", type=float, default=1.0, help="语速倍率，>1 变慢")
         sp.add_argument("--noise-scale", type=float, default=0.667, help="发音随机度")
