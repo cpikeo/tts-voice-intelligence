@@ -32,6 +32,7 @@ from engines import (  # noqa: E402
     XTTSEngine,
     run_with_timeout,
     validate_authorization,
+    verify_bound_asset,
 )
 
 
@@ -159,11 +160,9 @@ def trim_silence(x, sr, pad_ms=30):
 
 def voiced_rms_db(x, sr=22050):
     """有声部分 RMS（dBFS）；整段无声时返回 None。"""
-    from qa import active_frames
-    v = x[np.repeat(active_frames(x, sr), max(1, int(sr * 0.01)))[:len(x)]]
-    if v.size == 0:
-        return None
-    return _db(np.sqrt(np.mean(v.astype(np.float64) ** 2)))
+    from qa import frame_activity
+    rms = frame_activity(x, sr)[3]
+    return None if rms is None else _db(rms)
 
 
 def level_to(x, target_db, sr=22050):
@@ -206,35 +205,62 @@ def _fade_out(n):
     return 0.5 * (1 + np.cos(np.pi * np.arange(1, n + 1) / (n + 1)))
 
 
-def boundary_repair(x, sr, thr_db=-40.0, ms=2.0):
+def boundary_repair(x, sr, thr_db=-40.0, ms=2.0, *, copy=True):
     """Conditional click repair at speech <-> digital-silence boundaries.
 
     Only boundaries whose adjacent speech sample exceeds thr_db are touched, with a short
     fade applied on the speech side. Clean boundaries and all other samples are unchanged.
     Returns (audio, stats); stats record how many boundaries were repaired and the worst step
-    before and after, so the repair is auditable.
+    before and after. ``copy=False`` is for the pipeline's newly owned concatenation buffer.
     """
     from qa import boundary_jumps, digital_silence_runs, _db
-    y = np.array(x, dtype=np.float32, copy=True)
+    source = np.asarray(x)
+    runs = digital_silence_runs(source, sr)
     n_fade = max(2, int(sr * ms / 1000))
     thr = 10 ** (thr_db / 20)
-    before = [v for _, v in boundary_jumps(x, sr)]
-    repairs = 0
-    for a, b in digital_silence_runs(x, sr):
-        if a > 0 and abs(float(x[a - 1])) > thr:      # speech ends at a-1: fade out into silence
-            n = min(n_fade, a)
-            y[a - n:a] = (y[a - n:a] * _fade_out(n)).astype(np.float32)
-            repairs += 1
-        if b < len(x) and abs(float(x[b])) > thr:     # speech starts at b: fade in from silence
-            n = min(n_fade, len(x) - b)
-            y[b:b + n] = (y[b:b + n] * _fade_out(n)[::-1]).astype(np.float32)
-            repairs += 1
+    before_peak = 0.0
+    boundary_count = 0
+    events = []
+    for a, b in runs:
+        if a > 0:
+            boundary_count += 1
+            v = abs(float(source[a - 1]))
+            before_peak = max(before_peak, v)
+            if v > thr:
+                events.append(("out", a))
+        if b < len(source):
+            boundary_count += 1
+            v = abs(float(source[b]))
+            before_peak = max(before_peak, v)
+            if v > thr:
+                events.append(("in", b))
+
+    owns_float32 = source.dtype == np.float32 and source.flags.writeable
+    y = source if not copy and owns_float32 else np.array(source, dtype=np.float32, copy=True)
+    if not events:
+        before_db = round(_db(before_peak), 2) if boundary_count else None
+        return y, {
+            "repairs": 0,
+            "fade_ms": ms,
+            "threshold_dbfs": thr_db,
+            "max_step_before_dbfs": before_db,
+            "max_step_after_dbfs": before_db,
+        }
+
+    for side, pos in events:
+        if side == "out":  # speech ends at pos-1: fade out into silence
+            n = min(n_fade, pos)
+            y[pos - n:pos] = (y[pos - n:pos] * _fade_out(n)).astype(np.float32)
+        else:               # speech starts at pos: fade in from silence
+            n = min(n_fade, len(y) - pos)
+            y[pos:pos + n] = (y[pos:pos + n] * _fade_out(n)[::-1]).astype(np.float32)
+
     after = [v for _, v in boundary_jumps(y, sr)]
     stats = {
-        "repairs": repairs,
+        "repairs": len(events),
         "fade_ms": ms,
         "threshold_dbfs": thr_db,
-        "max_step_before_dbfs": round(_db(max(before)), 2) if before else None,
+        "max_step_before_dbfs": round(_db(before_peak), 2) if boundary_count else None,
         "max_step_after_dbfs": round(_db(max(after)), 2) if after else None,
     }
     return y, stats
@@ -356,12 +382,22 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
                 raise ValueError("断点续合成状态与当前文本/模型/参数不匹配；拒绝混用旧分段")
             ckpt_state = prior
 
+    from qa import active_seconds, frame_activity, reference_text
     parts, seg_reports, warnings = [], [], text_warnings(original, language)
     prev_gap = 0
     output_samples = 0
     t_total = 0.0
     resumed_count = 0
     synthesized_count = 0
+    piper_batch = (getattr(engine, "name", None) == "piper"
+                   and callable(getattr(engine, "verify_integrity", None))
+                   and callable(getattr(engine, "_synthesize_loaded", None)))
+    if piper_batch:
+        if eff_timeout is None:
+            engine.verify_integrity()
+        else:
+            run_with_timeout(engine.verify_integrity, eff_timeout)
+    segment_synthesize = engine._synthesize_loaded if piper_batch else engine.synthesize
 
     for i, seg in enumerate(segs):
         if cancel_event is not None and getattr(cancel_event, "is_set", lambda: False)():
@@ -410,15 +446,15 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
                         raise EngineError(f"第 {i + 1} 段合成已取消")
                     try:
                         call_out = (
-                            run_with_timeout(engine.synthesize, eff_timeout, seg.text)
-                            if eff_timeout is not None else engine.synthesize(seg.text)
+                            run_with_timeout(segment_synthesize, eff_timeout, seg.text)
+                            if eff_timeout is not None else segment_synthesize(seg.text)
                         )
                         if cancel_event is not None and getattr(cancel_event, "is_set", lambda: False)():
                             raise EngineError(f"第 {i + 1} 段合成完成后收到取消信号")
                         raw = np.asarray(call_out)
                         if raw.ndim != 1 or raw.size == 0 or not np.isfinite(raw).all():
                             raise EngineError("引擎输出为空、非有限或非单声道")
-                        if np.max(np.abs(raw)) > 1.0001:
+                        if max(float(np.max(raw)), float(-np.min(raw))) > 1.0001:
                             raise EngineError("引擎输出超出 [-1,1]；拒绝掩盖异常")
                         break
                     except EngineTimeoutError as e:
@@ -445,7 +481,7 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
             synthesized_count += 1
             if ckpt_path is not None:
                 seg_wav = ckpt_path / f"seg_{i:04d}.wav"
-                write_audio(seg_wav, raw.astype(np.float32), sr, "wav", subtype="FLOAT")
+                write_audio(seg_wav, raw.astype(np.float32, copy=False), sr, "wav", subtype="FLOAT")
                 ckpt_state.setdefault("segments", {})[str(i)] = {
                     "index": i,
                     "text": seg.text,
@@ -470,13 +506,16 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
             warnings.append(f"第 {i + 1} 段输出过短，可能发音缺失：{seg.text[:30]}")
         if processing == "legacy":
             x = fade(level_to(x, target_db, sr), sr)
-        dur = len(x) / sr
-        rms_db = voiced_rms_db(x, sr)
+        # Preserve the original warning semantics: these warnings describe each processed
+        # segment before the later cross-segment boundary repair and master peak attenuation.
+        _frame_rms, _active, _active_s, rms_amp = frame_activity(x, sr)
+        rms_db = None if rms_amp is None else _db(rms_amp)
         if rms_db is None:
             warnings.append(f"第 {i + 1} 段几乎无声（有声帧低于 -50 dBFS），未做响度对齐：{seg.text[:30]}")
         elif processing == "legacy" and abs(rms_db - target_db) > 1.0:
             warnings.append(f"第 {i + 1} 段响度 {rms_db:.1f} dBFS 偏离目标 {target_db:.1f} dBFS"
                             f"（已触发 ±12 dB 增益限制）：{seg.text[:30]}")
+        dur = len(x) / sr
         seg_reports.append({
             "index": i, "text": seg.text, "seconds": round(dur, 3),
             "synth_seconds": round(dt, 3), "pause_after": seg.pause_after,
@@ -494,25 +533,35 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
         if output_samples > sr * max_output_seconds:
             raise EngineError("输出超过时长上限；请按章节分批交付")
 
+    # Piper weights/config are loaded in memory; full SHA256 brackets the complete batch instead
+    # of re-reading model files for every sentence. Delivery remains bound to both checkpoints.
+    if getattr(engine, "name", None) == "piper" and callable(getattr(engine, "verify_integrity", None)):
+        if eff_timeout is None:
+            engine.verify_integrity()
+        else:
+            run_with_timeout(engine.verify_integrity, eff_timeout)
+
     audio = np.concatenate(parts)
+    del parts  # 释放各段缓冲区引用，避免后续 QA/处理时与整段音频并存
     repair_stats = None
     if boundary_repair_enabled:
-        audio, repair_stats = boundary_repair(audio, sr)  # 仅修复超阈值的数字静音交界，长度与段映射不变
+        audio, repair_stats = boundary_repair(audio, sr, copy=False)
         if repair_stats["repairs"]:
             warnings.append(f"已修复 {repair_stats['repairs']} 处数字静音交界的点击风险（最大跳变 "
                             f"{repair_stats['max_step_before_dbfs']} → {repair_stats['max_step_after_dbfs']} dBFS）")
-    peak = float(np.max(np.abs(audio)))
+    peak = max(float(np.max(audio)), float(-np.min(audio)))
     limit = 10 ** (peak_db / 20)
     if peak > limit:
-        audio = audio * (limit / peak)
-        warnings.append(f"峰值 {_db(peak):.1f} dBFS 超过上限，已整体衰减到 {peak_db} dBFS")
+        peak_before_gain = peak
+        np.multiply(audio, limit / peak, out=audio)
+        peak = max(float(np.max(audio)), float(-np.min(audio)))
+        warnings.append(f"峰值 {_db(peak_before_gain):.1f} dBFS 超过上限，已整体衰减到 {peak_db} dBFS")
 
-    from qa import active_seconds, reference_text
     for srep in seg_reports:
         final = audio[srep["start_sample"]:srep["start_sample"] + srep["samples"]]
-        rms = voiced_rms_db(final, sr)
+        _frame_rms, _active, act_s, rms_amp = frame_activity(final, sr)
+        rms = None if rms_amp is None else _db(rms_amp)
         srep["rms_dbfs"] = None if rms is None else round(rms, 2)
-        act_s = active_seconds(final, sr)
         ref_len = len(reference_text(srep["text"], language=language, spoken=True))
         srep["active_seconds"] = round(act_s, 3)
         srep["speech_rate_chars_per_s"] = round(ref_len / act_s, 2) if act_s > 0 else None
@@ -615,7 +664,7 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
         "validation": {"human_listening": "not_performed", "asr": "not_performed"},
         "synth_seconds": round(t_total, 3),
         "rtf": round(t_total / total, 3) if total > 0 else None,
-        "peak_dbfs": round(_db(float(np.max(np.abs(audio)))), 2),
+        "peak_dbfs": round(_db(peak), 2),
         # 段间一致性：各段对齐后的有声 RMS 与其标准差（客观代理，音色一致性仍需人工听评）
         "segment_rms_std_db": rms_std,
         "boundary_repair": repair_stats,
@@ -626,7 +675,7 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
                    "segment_timeout": eff_timeout},
         "warnings": warnings,
     }
-    return audio.astype(np.float32), sr, report
+    return audio.astype(np.float32, copy=False), sr, report
 
 
 SUPPORTED_FORMATS = ("wav", "flac", "ogg")
@@ -747,11 +796,16 @@ def sha256_file(path, chunk=1 << 20):
     return h.hexdigest()
 
 
-def model_provenance(path):
-    """模型可追溯信息：路径、大小、sha256。用于跨任务复现与许可核对。"""
+def model_provenance(path, fingerprint=None, *, verified=False):
+    """模型可追溯信息；只在本流程刚完成完整 SHA256 复核时复用已绑定指纹。"""
     if not path:
         return {"path": None, "exists": False}
     p = Path(path)
+    if fingerprint and Path(fingerprint.get("path", "")).resolve() == p.resolve():
+        if not verified:
+            verify_bound_asset(fingerprint)
+        return {"path": str(p), "name": p.name, "bytes": fingerprint["bytes"],
+                "sha256": fingerprint["sha256"], "exists": True}
     if not p.is_file():
         return {"path": str(p), "exists": False}
     return {"path": str(p), "name": p.name, "bytes": p.stat().st_size,
@@ -774,7 +828,8 @@ def cmd_check(args):
         info["engines"][args.engine] = {"available": True, "info": e.available()[1],
                                         "capabilities": e.capabilities}
         if getattr(args, "model", None):
-            info["engines"][args.engine]["model"] = model_provenance(args.model)
+            fingerprint = getattr(e, "bound_assets", {}).get("model") if args.engine == "piper" else None
+            info["engines"][args.engine]["model"] = model_provenance(args.model, fingerprint, verified=bool(fingerprint))
     except Exception as e:  # noqa: BLE001 - check 必须给出诊断而不是抛栈
         info["engines"][args.engine] = {"available": False,
                                         "reason": f"{type(e).__name__}: {e}"}
@@ -914,8 +969,11 @@ def cmd_synth(args):
         return 1
     report["created"] = _dt.datetime.now().astimezone().isoformat(timespec="seconds")
     report["skill_version"] = VERSION
-    report["model"] = model_provenance(getattr(args, "model", None))
-    report["config"] = model_provenance(getattr(engine, "config_path", args.config))
+    piper_assets = getattr(engine, "bound_assets", {}) if args.engine == "piper" else {}
+    report["model"] = model_provenance(getattr(args, "model", None), piper_assets.get("model"),
+                                       verified=bool(piper_assets.get("model")))
+    report["config"] = model_provenance(getattr(engine, "config_path", args.config), piper_assets.get("config"),
+                                         verified=bool(piper_assets.get("config")))
     report["lexicon"] = model_provenance(args.lexicon) if args.lexicon else None
     report["runtime"] = {"python": sys.version.split()[0], "platform": platform.platform()}
     report["engine_params"] = ({"length_scale": args.length_scale, "noise_scale": args.noise_scale,
@@ -973,7 +1031,8 @@ def main(argv=None):
         sp.add_argument("--length-scale", type=float, default=1.0, help="语速倍率，>1 变慢")
         sp.add_argument("--noise-scale", type=float, default=0.667, help="发音随机度")
         sp.add_argument("--noise-w", type=float, default=0.8, help="时长随机度")
-        sp.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT, help="单段与模型加载硬超时秒数（默认 60）")
+        sp.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT,
+                        help="单段与模型加载超时秒数；是否硬终止取决于适配器（默认 60）")
         sp.add_argument("--cuda", action="store_true", help="使用 GPU（需 onnxruntime-gpu）")
 
     c = sub.add_parser("check", help="检查环境与引擎")

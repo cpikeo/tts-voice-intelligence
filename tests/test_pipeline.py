@@ -67,6 +67,24 @@ def test_long_sentence_split_respects_max_chars():
     assert len(segs) > 2
 
 
+def test_peak_attenuation_does_not_relabel_pre_gain_segment_rms_warning():
+    class ImpulseEngine(ToneEngine):
+        def synthesize(self, _text):
+            audio = np.zeros(SR, dtype=np.float32)
+            audio[SR // 2] = 0.99
+            return audio
+
+    audio, _, report = tts.synthesize_text(
+        ImpulseEngine(), "检查增益。", processing="legacy", peak_db=-12.0,
+        boundary_repair_enabled=False)
+    assert audio.size
+    assert any("整体衰减" in warning for warning in report["warnings"])
+    # This warning was based on per-segment RMS before master attenuation in the baseline;
+    # final reported RMS may differ, but the later gain must not invent a segment warning.
+    assert not any("偏离目标" in warning for warning in report["warnings"])
+    assert report["segments"][0]["rms_dbfs"] < -30
+
+
 def test_pipeline_outputs_consistent_level_and_pauses():
     eng = ToneEngine()
     audio, sr, rep = tts.synthesize_text(eng, "今天天气很好。我们去公园散步吧。", target_db=-20)
@@ -84,6 +102,23 @@ def test_normalization_applied_before_engine():
     _, _, rep = tts.synthesize_text(eng, "2026年10月12日")
     assert eng.calls == ["二零二六年十月十二日"]
     assert rep["original_text"] == "2026年10月12日"
+
+
+def test_piper_batch_checks_full_integrity_before_and_after_loaded_session():
+    class BoundPiper(ToneEngine):
+        name = "piper"
+        def __init__(self):
+            super().__init__()
+            self.integrity_checks = 0
+        def verify_integrity(self):
+            self.integrity_checks += 1
+        def _synthesize_loaded(self, text):
+            return super().synthesize(text)
+
+    eng = BoundPiper()
+    audio, _, rep = tts.synthesize_text(eng, "第一句。第二句。", processing="minimal")
+    assert audio.size and rep["segment_count"] == 2
+    assert eng.integrity_checks == 2  # once before, once after the complete batch
 
 
 def test_retry_then_success_and_hard_failure():

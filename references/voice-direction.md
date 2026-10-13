@@ -17,15 +17,15 @@
 
 ## 停顿与处理的代价
 
-CLI 默认 `minimal`：保留模型原始段落音频与句尾呼吸留白，仅在超峰时整体衰减，不逐段对齐 RMS、不加固定淡变或统一句间静音（除非 `direction` 的 beat 显式指定 `pause_after_ms`）。`--processing legacy` 仅在确需逐段 RMS 对齐（±12 dB）、12ms 淡变和固定停顿时显式启用。模型发音错误先修朗读稿/词典，不能用音频处理掩盖。
+CLI 默认 `minimal` 保留模型原始动态，不做逐段 RMS 对齐或固定淡变；但默认停顿策略仍会插入段落/句子/子句间 700/400/200 ms 停顿，`--pause-* 0` 可关闭，direction beat 的 `pause_after_ms` 覆盖对应边界。插入策略停顿时仅裁掉引擎自带边界静音、保留约 30 ms 余量，再插入目标长度；数字静音交界仅在检测到超过 -40 dBFS 的跳变时对语音侧做 2 ms 修复，超峰时才整体衰减。`--processing legacy` 额外启用逐段 RMS 对齐（±12 dB）和 12ms 淡变。模型发音错误先修朗读稿/词典，不能用音频处理掩盖。
 
 ## 物理隔离的盲听协议
 
 1. **三方隔离 (`--isolate`)**：
    ```bash
    python scripts/blindtest.py prepare --audio sample1.wav sample2.wav \
-     --out validation/listening-unrated \
-     --ratings-dir validation/listening-unrated/ratings \
+     --out listening/unrated \
+     --ratings-dir listening/unrated/ratings \
      --map-file private/listening-blind-map.json --isolate --seed 17
    ```
    - `listen/`：仅含重编码剥离容器元数据的匿名音频（`A.wav..I.wav`）、`order.txt` 与不含源路径的 `manifest.json`（prepare 阶段自动解码验证可播放性、有限值与源文件名零残留）。

@@ -81,6 +81,33 @@ def test_active_tail_frame_and_empty_signal():
     assert qa.active_seconds(np.array([np.nan]), SR) == 0
 
 
+@pytest.mark.parametrize("length", [1, 159, 160, 161, 441, 1600, 1601])
+def test_frame_activity_matches_reference_with_partial_tail(length):
+    hop = int(SR * qa.FRAME_MS / 1000)
+    idx = np.arange(length)
+    amplitude = np.where((idx // hop) % 3 == 1, 0.001, 0.04)
+    x = (amplitude * np.where(idx % 2, -1.0, 1.0)).astype(np.float32)
+
+    n = (length + hop - 1) // hop
+    padded = np.pad(x, (0, n * hop - length))
+    power = np.sum(padded.reshape(n, hop).astype(np.float64) ** 2, axis=1)
+    counts = np.full(n, hop)
+    counts[-1] = length - (n - 1) * hop
+    ref_rms = np.sqrt(power / counts)
+    ref_active = ref_rms > 10 ** (-50 / 20)
+    ref_sample_mask = np.repeat(ref_active, hop)[:length]
+    ref_active_rms = np.sqrt(np.mean(x[ref_sample_mask].astype(np.float64) ** 2)) if ref_sample_mask.any() else None
+
+    frame_rms, active, active_s, active_rms = qa.frame_activity(x, SR)
+    np.testing.assert_array_equal(active, ref_active)
+    np.testing.assert_allclose(frame_rms, ref_rms, rtol=1e-12, atol=1e-12)
+    assert active_s == pytest.approx(float(ref_sample_mask.sum()) / SR)
+    if ref_active_rms is None:
+        assert active_rms is None
+    else:
+        assert active_rms == pytest.approx(ref_active_rms, rel=1e-7)
+
+
 def test_stereo_clipping_not_hidden_by_downmix(tmp_path):
     import soundfile as sf
     x = np.tile(np.array([[1., -1.], [-1., 1.]]), (SR, 1))
@@ -368,6 +395,19 @@ def test_piper_wraps_native_failure():
         engine.synthesize("test")
 
 
+def test_piper_direct_api_brackets_segment_with_integrity_checks():
+    engine = object.__new__(engines.PiperEngine)
+    checks = []
+    engine.verify_integrity = lambda: checks.append("full-sha256")
+    engine.voice = SimpleNamespace(synthesize=lambda *a, **kw: [
+        SimpleNamespace(audio_float_array=np.full(32, 0.1, dtype=np.float32))
+    ])
+    engine.syn = None
+    audio = engine.synthesize("direct API")
+    assert audio.shape == (32,) and np.all(audio == np.float32(0.1))
+    assert checks == ["full-sha256", "full-sha256"]
+
+
 def test_direction_full_chain_pause_and_qa_verification(tmp_path):
     class RateSignal(Signal):
         name = "espeak"
@@ -576,6 +616,26 @@ def test_signed_authorization_and_asset_binding(tmp_path, monkeypatch):
     model.write_bytes(b"tampered after init")
     with pytest.raises(tts.EngineError, match="绑定|不符"):
         engine.synthesize("test")
+
+
+def test_bound_asset_verification_always_hashes_and_detects_same_size_tamper(tmp_path, monkeypatch):
+    asset = tmp_path / "bound.bin"
+    original = b"immutable-model-data" * 1024
+    asset.write_bytes(original)
+    _raw, fp = engines._read_and_fingerprint(asset)
+
+    def unexpected_hash_read(*args, **kwargs):
+        raise AssertionError("cryptographic asset verification must read and hash the bound file")
+
+    with monkeypatch.context() as m:
+        m.setattr(engines.os, "read", unexpected_hash_read)
+        with pytest.raises(AssertionError):
+            engines.verify_bound_asset(fp)
+
+    # Same-size rewrite must still be detected even where filesystem timestamp metadata is coarse.
+    asset.write_bytes(b"X" * len(original))
+    with pytest.raises(engines.EngineError, match="绑定校验失败"):
+        engines.verify_bound_asset(fp)
 
 
 def test_untrusted_model_pickle_and_zip_slip_rejected(tmp_path):

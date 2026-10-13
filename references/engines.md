@@ -1,29 +1,28 @@
 # 引擎、依赖、安全隔离与能力边界
 
-决策以 SKILL.md 为准。适配器在 `scripts/engines.py`；实例 JSON 能力比此矩阵更具体。
+决策以 `SKILL.md` 为准；适配器在 `scripts/engines.py`。**实现存在不等于本机模型效果通过验收**：当前 checkout 不附带 Piper/XTTS 权重、授权参考音频或 `validation/` 评测产物；eSpeak NG 也不是基础依赖。
 
-| 引擎 | 实现/验证 | 语言与地区 | 音色/说话人 | 语速/停顿/情绪 | 克隆 | 超时/绑定/隔离 | 许可 |
-|---|---|---|---|---|---|---|---|
-| Piper | 真实实现；本次 huayan 中文 7 类场景实测 | 模型配置 locale；裸语言匹配同根地区，不跨地区静默回退 | 固定模型；配置内 speaker id | 逐段 `length_scale` 与 `pause_after_ms`；无情绪/重音/音色接口 | 不支持 | 默认 60s 超时（进程内，推理返回后生效，不可中断；已实测）；加载与合成前后校验模型/配置哈希；ONNX 路径穿越筛查；`--isolate-model` 子进程组可硬终止 | piper-tts GPL-3.0-or-later；每模型数据/权重许可单独确认 |
-| eSpeak NG | 真实子进程实现；中/英/德/日实测 | 从本机 `--voices` 读取；显式地区不回退 | 地区默认 voice | 逐段 `length_scale`（映射 wpm）与 `pause_after_ms`；无情绪接口 | 不支持 | 独立进程组（`start_new_session`）+ 默认 60s 超时；超时或取消时 `killpg` 清理进程组（硬终止） | 软件 GPL-3.0-or-later；随系统语音数据许可另核对 |
-| XTTS | 本地 coqui-tts API 实现；替身契约、验签与门禁实测，真实克隆缺资产未验证 | 配置 `languages` 与授权 `allowed_languages` 交集；不降级地区 | 已授权参考音色 | 仅支持管线 `pause_after_ms`；不暴露语速、情绪或重音 | 支持调用，目标音色保持未实测 | 默认 60s 超时（进程内，同 Piper 不可中断，未实测）；单次内存读入消除参考音频 TOCTOU；HMAC-SHA256 授权验签；pickle/ZIP 静态安全拦截；可选 `--isolate-model` | 包通常 MPL-2.0；XTTS 权重常为 CPML，不可假定商用 |
+| 引擎 | 代码与可复现验证 | 语言/地区 | 可用控制与能力边界 | 超时与资产复核 | 许可 |
+|---|---|---|---|---|---|
+| Piper | ONNX 适配器已实现；真实集成测试由 `TTS_PIPER_MODEL` 门控，当前环境缺 `piper-tts` 与模型，未执行 | 读取模型配置 locale；不跨地区静默回退 | 固定模型音色/配置内 speaker id；逐段 `length_scale` 与管线停顿；无情绪/重音/音色调制或克隆接口 | 模型加载前静态筛查与 SHA256；加载后复核；`synthesize_text` 对整个批次开始/结束各做一次完整模型/配置 SHA256，段内只调用已加载的内存模型。直接 `synthesize()` 单段仍完整前后校验。失败批次不返回交付音频 | `piper-tts` 通常 GPL-3.0-or-later；模型许可需逐模型核对 |
+| eSpeak NG | 子进程适配器已实现；集成用例仅在检测到 `espeak-ng` 时运行，当前环境未安装，未执行 | 从本机 `--voices` 查询；显式地区不回退 | 地区默认 voice；`length_scale` 映射为 WPM；无神经音色/情绪/重音控制、无克隆 | 单段子进程组超时/取消时强制终止；当前环境未实测系统级行为 | 程序 GPL-3.0-or-later；随系统语音数据许可另核对 |
+| XTTS | 本地 Coqui API 适配器；合同/授权测试使用替身，真实模型与克隆效果未验证 | 必须同时匹配 XTTS 配置与授权允许语言；不静默地区降级 | 授权参考音色；只提供管线停顿，不暴露语速、情绪或重音控制 | 当前进程内超时不可保证立即中断；每段开始重验授权并完整校验模型/配置/参考，结束复核参考。真实超时、资源占用与克隆效果未验证 | 包与权重许可须分别确认；XTTS 权重可能有非商业限制，不能默认商用 |
 
-没有默认模型排名；历史无原始产物的结论已撤回。eSpeak 的多语言实现不是专业自然度背书。仓库本身未附 LICENSE：不要擅自假设源码可按某许可证分发。
-
-## 最小依赖与可选安装
+## 最小依赖与可选组件
 
 ```bash
 pip install -r requirements.txt
-pip install piper-tts                    # 本次 1.4.2 / onnxruntime 1.24.4
-sudo apt-get install espeak-ng           # 本次 1.52.0
-pip install coqui-tts                    # 本次未安装/未验证；不是基础依赖
-pip install faster-whisper scipy opencc-python-reimplemented
+pip install piper-tts                    # 可选；用户自备 .onnx 与同名 .onnx.json
+sudo apt-get install espeak-ng           # 可选系统程序
+pip install coqui-tts                    # 可选独立环境；需要本地 XTTS 资产与有效授权
+pip install faster-whisper scipy opencc-python-reimplemented  # 可选 QA/ASR
 ```
 
-Piper 用户自备 `.onnx` + 同名 `.onnx.json`。本次非商业技术测试 `zh_CN-huayan-medium` 模型卡为 dataset License: Unknown，不能据此商业交付。不要将模型权重放入仓库。
+模型权重不应放入仓库；软件、数据与每份模型/语音许可须分别核对。本仓库未附 `LICENSE`，不要推断源码的再分发许可。
 
-## 资产绑定、授权验签与不可信模型隔离
+## 资产绑定、授权与模型安全检查
 
-1. **单次读取与哈希绑定（防 TOCTOU）**：`_read_and_fingerprint` 从同一文件描述符单次读入内存并计算 SHA256，配置解析与参考音频 `soundfile` 解码直接作用于该内存缓冲；模型加载前后与每次 `synthesize` 前后通过 `verify_bound_asset` 复核磁盘文件大小与 SHA256，发生变更立即拒绝。
-2. **授权真实性校验**：`validate_authorization` 拒绝模板占位符（如 `REPLACE-WITH-...`）。当传入 `--require-signed-auth`、设置 `TTS_REQUIRE_SIGNED_AUTH=1`、提供 `TTS_AUTH_SIGNING_KEY` 或授权 JSON 含 `signature` 字段时，使用 `hmac.compare_digest` 校验规范化载荷的 `hmac-sha256` 签名；未配置外部公钥基础设施时，本地签名仅防未持密钥篡改，不等同法律身份公证。
-3. **不可信模型静态筛查与子进程隔离**：`inspect_model_safety` 在加载前扫描配置路径穿越/远程 URL、ONNX 外部路径穿越、ZIP 归档路径穿越（ZIP Slip），并用 `pickletools.genops` 静态反汇编排查 `.pth`/`.pt` 中的高危全局调用（`os`、`posix`、`subprocess`、`builtins.eval/exec/getattr` 等）与 `EXT*` 指令；`tts.py synth --isolate-model` 可将模型加载与合成放入独立离线子进程组（`HF_HUB_OFFLINE=1`、独立临时工作目录、超时进程组强杀）。
+1. **同一描述符读取**：`_read_and_fingerprint` 从单个文件描述符读取内容并计算 SHA256，记录设备、inode、大小与时间戳；读取期间若文件/路径状态变化即拒绝。模型安全扫描使用这次读入的字节，避免校验内容与加载前扫描内容脱节。
+2. **SHA256 不以文件时间戳替代**：`verify_bound_asset` 每次调用都重新读取并计算完整 SHA256；不使用仅靠 `mtime`/`ctime` 的内容缓存。Piper 优化基于加载生命周期：模型和配置在加载后驻留于内存，因此流水线在批次开始、结束完整复核，不对每个句段重复读取不再参与推理的磁盘文件；结束复核失败时不交付。直接单段适配器调用仍做前后完整复核。
+3. **授权真实性校验**：模板占位符拒绝；当要求签名或授权记录含签名时，使用 `hmac.compare_digest` 验证 HMAC-SHA256。没有外部公钥/CA 体系时，本地对称签名只能证明持密钥者签署了载荷，不等同法律身份公证。
+4. **不可信模型静态筛查**：加载前扫描配置远程/穿越路径、ONNX 外部路径穿越、ZIP 路径穿越及 `.pth`/`.pt` pickle 高危全局调用。静态扫描不能证明任意第三方模型绝对安全；`--isolate-model` 通过离线环境中的独立子进程组隔离并支持硬终止，**不等同操作系统容器或完整沙箱**。

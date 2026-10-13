@@ -1,61 +1,69 @@
 # tts-voice-intelligence
 
-独立、标准 Skill 结构的本地语音系统：**意图优先，能力约束，证据交付**。
-`SKILL.md` 是唯一决策基准；无平台专属路由。包含 Piper、eSpeak NG 与本地授权 XTTS 薄适配器。
+本地多引擎 TTS 与音频验收工具：**先理解意图，再遵守引擎能力，最后以证据交付**。`SKILL.md` 是唯一决策基准；`scripts/` 实现确定性执行，`references/` 记录边界与复现方法。
 
-## 状态（不要把实现等同听感认证）
+## 能力与当前验证边界
 
-- **Piper**：真实中文集成与 7 类重点场景（普通中文、数字日期、中英混合、专名、多音字、叙事转折、长文本）重复 ASR 评测；模型固定音色，支持逐段语速（`length_scale`）与段间停顿（`pause_after_ms`），无克隆/显式情绪。
-- **eSpeak NG**：中、英（US/GB）、德、日真实合成与信号检查；eSpeak 进程组强杀与取消清理已实测；Piper 单次推理超时仅在推理返回后生效（不可中断）；专业自然度未人评。
-- **XTTS**：真实本地 API 调用实现，含单次读取参考绑定、模型/配置加载前后 SHA256 绑定、HMAC-SHA256 授权验签、pickle/ZIP 静态安全筛查与替身契约测试；**缺本地真实模型与合法授权参考语音，真实克隆效果未验证**。
-- **生产可靠性**：引擎超时（`--timeout`，子进程引擎为硬终止，进程内 Piper 为推理返回后生效）、取消即停、整组交付原子事务（`transactional_write_bundle`，含母版 WAV + 派生 FLAC/OGG + JSON 报告回滚）、分段断点恢复（`--checkpoint-dir`）、子进程离线隔离（`--isolate-model`）。
-- 完整审计与验证证据见 [AUDIT.md](AUDIT.md)、[VALIDATION.md](VALIDATION.md)。源码原仓库未附 LICENSE，软件/数据/模型许可须分别核对。
+- 代码包含 Piper、eSpeak NG 与本地授权 XTTS 适配器，支持中文规范化/词典、语义分段、声音策略、音频 QA、断点恢复和交付事务。
+- **模型由用户提供**；仓库不含权重、授权参考音频或静态 `validation/` 评测产物。真实引擎效果、实际生成 RTF、ASR 回听与人工盲听必须在准备好相应模型/工具后单独运行，不能由单元测试代替。
+- Piper 固定模型音色；Piper/eSpeak 支持实现范围内的逐段语速和边界停顿；XTTS 调用仍受模型、语言和授权限制。代码不宣称未实现或未验证的情绪、重音、自然度或克隆相似度。
+- 当前性能审计、可复现的 fixture 基准、测试结果及限制见 [OPTIMIZATION.md](OPTIMIZATION.md)；当前仓库评测入口与资产边界见 [references/eval-results.md](references/eval-results.md)。
+- 软件、模型、数据许可须分开核对；源码仓库未附 `LICENSE`，不要假定可再分发或商用。
 
-## 安装与运行
+## 安装
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-pip install piper-tts                      # 可选，用户自备 .onnx/.onnx.json
-# 或系统安装 espeak-ng：sudo apt-get install espeak-ng
+pip install pytest                         # 可选：运行测试
+pip install piper-tts                      # 可选：Piper；需自备 .onnx 与同名 .onnx.json
+sudo apt-get install espeak-ng             # 可选：eSpeak NG 系统程序
+# XTTS、ASR 及额外检查为可选组件，见 references/engines.md
+```
+
+## 合成与验收
+
+```bash
 python scripts/tts.py check --model /path/to/model.onnx
 python scripts/tts.py synth --model /path/to/model.onnx --input script.txt \
   --out output/narration.wav --format flac --report output/report.json \
   --checkpoint-dir output/ckpt --timeout 60
 python scripts/qa.py output/narration.wav --synthesis-report output/report.json \
   --asr base --report output/qa.json
-# 声音导演五步链契约（语境→意图→可听变化→支持控制→结果验证）：
+
+# eSpeak 必须明确指定地区，不静默降级
 python scripts/tts.py synth --engine espeak --language en-US \
   --text 'This discovery changes everything.' --direction assets/direction.example.json \
   --out output/english.wav --report output/english.json
 ```
 
-CLI 默认 **minimal**：保留各段原始动态，不做逐段归一；段间按句/段落/子句插入停顿（默认 700/400/200 ms）；数字静音交界超过 -40 dBFS 的跳变仅对语音侧 2 ms 做淡变；超峰时整体衰减。`--direction` 中的 `pause_after_ms` 按节拍精确插入停顿。需旧版逐段 RMS 对齐时显式传 `--processing legacy`。低层 `synthesize_text` 保留 `legacy` 默认以兼容旧调用。低层 `synthesize_text` 保留 `legacy` 默认以兼容旧调用。
-输入最多 10 万字符、输出最多 30 分钟；母版 WAV、派生 FLAC/OGG 与 JSON 报告采用整组事务提交，任一文件失败即全组回滚。
+CLI 默认 `minimal`：保留引擎段落动态、不逐段响度归一；默认段间停顿为段落/句子/子句 700/400/200 ms，`--pause-* 0` 可关闭，direction beat 可覆盖指定边界。只在点击风险超过阈值时修复边界，只在超峰时整体衰减。`--processing legacy` 才启用旧式逐段 RMS 对齐与淡变。低层 `synthesize_text` 的 `legacy` 默认仅为兼容旧调用。
 
-合成退出码：`0` 生成成功（非质量认证）/ `1` 空或无效文本 / `2` 引擎不可用 / `3` 合成或超时失败 / `4` 输入、配置、输出错误。
-QA 退出码：`0` 无技术 fail / `1` 存在 fail / `2` 不可读音频或验收输入错误。`warn` 与 `skip` 必须解释，不等于完整通过。
+`--timeout` 对模型加载与每段调用生效，但进程内 Piper/XTTS 的原生推理不保证能被立即中断；eSpeak 子进程与 `--isolate-model` 子进程组实现硬终止。输入最多 100,000 字符、输出最多 30 分钟，全音频驻留内存，不声称流式或无限长。
 
-## 回听诊断与物理隔离盲测
+合成退出码：`0` 生成成功（不等于质量认证）、`1` 空/无效文本、`2` 引擎不可用、`3` 合成/超时失败、`4` 输入/配置/输出错误。QA 退出码：`0` 无技术 fail、`1` 存在 fail、`2` 音频或验收输入错误；`warn` 和 `skip` 需解释，不等于完整通过。
+
+## 人工盲听
 
 ```bash
-pip install faster-whisper scipy opencc-python-reimplemented  # 可选
-python scripts/qa.py output/narration.wav --synthesis-report output/report.json --asr base
 python scripts/blindtest.py prepare --audio output/narration.wav output/english.wav \
-  --out listening --ratings-dir listening/ratings --map-file private/blind_map.json \
-  --isolate --seed 17
-# 仅向人类评员分发 listening/listen/ 与 listening/ratings/ratings.csv，绝不分发 private/blind_map.json
-python scripts/blindtest.py score --pkg listening --ratings-dir listening/ratings
-python scripts/blindtest.py unblind --pkg listening --ratings-dir listening/ratings \
-  --map-file private/blind_map.json --out listening/ratings/unblinded.json
+  --out listening/pkg --ratings-dir listening/pkg/ratings \
+  --map-file private/blind_map.json --isolate --seed 17
+# 只把 listening/pkg/listen/ 与 ratings.csv 发给评员；不要分发私有映射
+python scripts/blindtest.py score --pkg listening/pkg --ratings-dir listening/pkg/ratings
+python scripts/blindtest.py unblind --pkg listening/pkg --ratings-dir listening/pkg/ratings \
+  --map-file private/blind_map.json --out listening/pkg/ratings/unblinded.json
 ```
 
-ASR/CER 仅作诊断代理，受同音字与数字转写影响，不等同听感认证；不得由 Agent 编造人工评分或克隆相似度。
+ASR/CER 只是诊断代理，不等同听感认证；不得由 Agent 编造人工评分或克隆相似度。
 
-## 测试与复现
+## 测试与真实引擎复现
 
 ```bash
-python -m pytest -q                         # 无 Piper 模型时明确 skip 10 项 Piper 与 1 项 XTTS（当前 173 passed / 11 skipped）
-TTS_PIPER_MODEL=/path/to/model.onnx python -m pytest -q
-bash validation/reproduce.sh /path/to/model.onnx new-validation private-out
+python3 -m pytest -q -rs
+TTS_PIPER_MODEL=/path/to/model.onnx python3 -m pytest -q tests/test_piper_integration.py
+python3 tests/run_eval.py --engine piper --model /path/to/model.onnx \
+  --out validation/piper-run --repeat 3
 ```
+
+Piper/eSpeak/XTTS 的完整复现条件、当前缺失资产和 skip 边界见 [references/eval-results.md](references/eval-results.md)。

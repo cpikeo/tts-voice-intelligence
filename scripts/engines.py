@@ -9,6 +9,7 @@ import pickletools
 from pathlib import Path
 import re
 import signal
+import stat
 import threading
 import zipfile
 
@@ -20,7 +21,7 @@ class EngineError(RuntimeError):
 
 
 class EngineTimeoutError(EngineError):
-    """引擎执行硬超时。"""
+    """引擎超时；是否能硬终止由适配器和原生调用边界决定。"""
 
 
 DEFAULT_TIMEOUT = 60.0
@@ -57,7 +58,7 @@ def _validate_timeout(timeout):
 
 
 def run_with_timeout(func, timeout, *args, **kwargs):
-    """Enforce hard wall-clock timeout on synchronous engine calls."""
+    """Apply a wall-clock deadline; native code may defer signal handling and outlive it."""
     limit = _validate_timeout(timeout)
     if hasattr(signal, "SIGALRM") and threading.current_thread() is threading.main_thread():
         def _alarm_handler(_signum, _frame):
@@ -86,59 +87,108 @@ def run_with_timeout(func, timeout, *args, **kwargs):
         ex.shutdown(wait=False, cancel_futures=True)
 
 
+_STAT_FIELDS = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")
+
+
+def _stat_signature(st):
+    return tuple(int(getattr(st, name)) for name in _STAT_FIELDS)
+
+
+def _fingerprint_stat(st):
+    return {
+        "dev": int(st.st_dev),
+        "ino": int(st.st_ino),
+        "bytes": int(st.st_size),
+        "mtime_ns": int(st.st_mtime_ns),
+        "ctime_ns": int(st.st_ctime_ns),
+    }
+
+
+def _open_bound_file(path):
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    return os.open(path, flags)
+
+
+def _path_stat(path):
+    try:
+        st = os.stat(path, follow_symlinks=False)
+    except OSError as e:
+        raise EngineError(f"绑定资产已丢失或无法 stat：{path}: {e}") from e
+    if not stat.S_ISREG(st.st_mode):
+        raise EngineError(f"绑定资产不是普通文件或变成符号链接：{path}")
+    return st
+
+
 def _read_and_fingerprint(path, max_bytes=2 * 1024 * 1024 * 1024):
-    """Read file once from a single descriptor and return (bytes, fingerprint) to prevent TOCTOU."""
+    """Read once from a single descriptor, hash those exact bytes, and bind its stat identity."""
     p = Path(path)
     if not p.is_file():
         raise EngineError(f"资产文件不存在：{p}")
-    flags = os.O_RDONLY
-    if hasattr(os, "O_NOFOLLOW"):
-        try:
-            fd = os.open(p, flags)
-        except OSError as e:
-            raise EngineError(f"打开资产文件失败：{p}: {e}") from e
-    else:
-        fd = os.open(p, flags)
+    try:
+        fd = _open_bound_file(p)
+    except OSError as e:
+        raise EngineError(f"打开资产文件失败：{p}: {e}") from e
     try:
         st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode) or _stat_signature(st) != _stat_signature(_path_stat(p)):
+            raise EngineError(f"资产路径不是普通文件或在读取期间被替换：{p}")
         if st.st_size > max_bytes:
             raise EngineError(f"资产文件超过大小上限（{st.st_size} > {max_bytes} bytes）：{p}")
         chunks = []
         h = hashlib.sha256()
-        remaining = st.st_size + 1
+        total = 0
         while True:
-            buf = os.read(fd, min(1 << 20, max(4096, remaining)))
+            buf = os.read(fd, 1 << 20)
             if not buf:
                 break
-            if sum(len(c) for c in chunks) + len(buf) > max_bytes:
+            total += len(buf)
+            if total > max_bytes:
                 raise EngineError(f"资产文件读取中超出大小上限：{p}")
             chunks.append(buf)
             h.update(buf)
+        after = os.fstat(fd)
+        path_after = _path_stat(p)
+        if (_stat_signature(st) != _stat_signature(after)
+                or _stat_signature(after) != _stat_signature(path_after)
+                or total != after.st_size):
+            raise EngineError(f"资产文件在读取期间被变更或替换：{p}")
         raw = b"".join(chunks)
-        fp = {
-            "path": str(p),
-            "bytes": len(raw),
-            "sha256": h.hexdigest(),
-            "ino": int(st.st_ino),
-        }
+        fp = {"path": str(p), **_fingerprint_stat(after), "sha256": h.hexdigest()}
         return raw, fp
     finally:
         os.close(fd)
 
 
 def verify_bound_asset(fp):
-    """Verify that an asset on disk still matches the exact fingerprint captured at validation time."""
+    """Recompute SHA256 and verify the path still names the same stable file during the read."""
     p = Path(fp["path"])
-    if not p.is_file():
-        raise EngineError(f"绑定资产已丢失：{p}")
-    h = hashlib.sha256()
-    total = 0
-    with p.open("rb") as f:
-        for block in iter(lambda: f.read(1 << 20), b""):
+    path_before = _path_stat(p)  # Reject FIFOs/devices before open; do not risk a blocking read.
+    try:
+        fd = _open_bound_file(p)
+    except OSError as e:
+        raise EngineError(f"绑定资产已丢失或无法打开：{p}: {e}") from e
+    try:
+        before = os.fstat(fd)
+        if (_stat_signature(before) != _stat_signature(path_before)
+                or _stat_signature(before) != _stat_signature(_path_stat(p))):
+            raise EngineError(f"资产路径在校验期间被替换：{p}")
+        h = hashlib.sha256()
+        total = 0
+        while True:
+            block = os.read(fd, 1 << 20)
+            if not block:
+                break
             total += len(block)
             h.update(block)
-    if total != fp["bytes"] or h.hexdigest() != fp["sha256"]:
-        raise EngineError(f"资产绑定校验失败（加载或合成期间文件被篡改/替换）：{p}")
+        after = os.fstat(fd)
+        path_after = _path_stat(p)
+        if (_stat_signature(before) != _stat_signature(after)
+                or _stat_signature(after) != _stat_signature(path_after)):
+            raise EngineError(f"资产在校验期间被变更或替换：{p}")
+        if total != fp["bytes"] or h.hexdigest() != fp["sha256"]:
+            raise EngineError(f"资产绑定校验失败（加载或合成期间文件被篡改/替换）：{p}")
+    finally:
+        os.close(fd)
 
 
 def _scan_pickle_bytes(data, source_label):
@@ -391,23 +441,37 @@ class PiperEngine(Engine):
     def available(self):
         return True, f"piper model={self.model_path} sr={self.sample_rate}"
 
-    def synthesize(self, text):
-        try:
-            if hasattr(self, "bound_assets"):
-                verify_bound_asset(self.bound_assets["model"])
-                verify_bound_asset(self.bound_assets["config"])
+    def verify_integrity(self):
+        """Full SHA256 checkpoint used after synthesis (and after direct capture batches)."""
+        if hasattr(self, "bound_assets"):
+            verify_bound_asset(self.bound_assets["model"])
+            verify_bound_asset(self.bound_assets["config"])
 
+    def _synthesize_loaded(self, text):
+        """One segment from the already loaded, immutable in-memory Piper session.
+
+        The caller must verify the bound model/config before and after the complete batch. This
+        avoids re-reading large model files for every sentence without weakening batch integrity.
+        """
+        try:
             def _do_synth():
                 chunks = list(self.voice.synthesize(text, syn_config=self.syn))
                 if not chunks:
                     raise EngineError("Piper 返回空结果")
-                return np.concatenate([c.audio_float_array for c in chunks]).astype(np.float32)
+                return np.concatenate([c.audio_float_array for c in chunks]).astype(np.float32, copy=False)
 
             return run_with_timeout(_do_synth, getattr(self, "timeout", DEFAULT_TIMEOUT))
         except EngineError:
             raise
         except Exception as e:
             raise EngineError(f"Piper 合成失败：{e}") from e
+
+    def synthesize(self, text):
+        """Direct one-segment API retains full pre/post asset SHA256 checks."""
+        self.verify_integrity()
+        audio = self._synthesize_loaded(text)
+        self.verify_integrity()
+        return audio
 
 
 class EspeakEngine(Engine):

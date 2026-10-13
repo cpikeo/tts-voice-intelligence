@@ -14,25 +14,51 @@ from textnorm import _MASK_NUM, load_lexicon, mask_numbers, normalize_zh, normal
 FRAME_MS = 10
 
 
+def frame_activity(x, sr):
+    """Return (frame RMS, active-frame mask, active seconds, active RMS) in one pass.
+
+    Activity is 10ms RMS > -50dBFS, a signal proxy rather than phonetic VAD. The final partial
+    frame is weighted by its real sample count; no sample-sized repeated mask is allocated.
+    """
+    x = np.asarray(x)
+    if sr <= 0 or x.ndim != 1 or not x.size:
+        empty = np.zeros(0, dtype=np.float64)
+        return empty, np.zeros(0, dtype=bool), 0.0, None
+
+    hop = max(1, int(sr * FRAME_MS / 1000))
+    full_frames, tail_samples = divmod(len(x), hop)
+    n_frames = full_frames + bool(tail_samples)
+    power = np.empty(n_frames, dtype=np.float64)
+    if full_frames:
+        frames = x[:full_frames * hop].reshape(full_frames, hop)
+        power[:full_frames] = np.einsum("ij,ij->i", frames, frames, dtype=np.float64, optimize=False)
+    if tail_samples:
+        tail = np.asarray(x[full_frames * hop:], dtype=np.float64)
+        power[-1] = np.dot(tail, tail)
+
+    frame_rms = np.sqrt(power / hop)
+    if tail_samples:
+        frame_rms[-1] = np.sqrt(power[-1] / tail_samples)
+    active = frame_rms > 10 ** (-50 / 20)
+    active_samples = int(np.count_nonzero(active)) * hop
+    if tail_samples and active[-1]:
+        active_samples -= hop - tail_samples
+    active_s = active_samples / sr
+    active_rms = (float(np.sqrt(np.sum(power[active], dtype=np.float64) / active_samples))
+                  if active_samples else None)
+    return frame_rms, active, active_s, active_rms
+
+
 def active_frames(x, sr):
     """10ms RMS > -50dBFS. Signal activity proxy, not phonetic VAD."""
-    hop = max(1, int(sr * FRAME_MS / 1000))
-    n = (len(x) + hop - 1) // hop
-    if n == 0:
-        return np.zeros(0, dtype=bool)
-    padded = np.pad(x, (0, n * hop - len(x)))
-    power = np.sum(padded.reshape(n, hop).astype(np.float64) ** 2, axis=1)
-    counts = np.full(n, hop)
-    counts[-1] = len(x) - (n - 1) * hop
-    return np.sqrt(power / counts) > 10 ** (-50 / 20)
+    return frame_activity(x, sr)[1]
 
 
 def active_seconds(x, sr):
-    if sr <= 0 or not len(x) or not np.isfinite(x).all():
+    x = np.asarray(x)
+    if sr <= 0 or not x.size or not np.isfinite(x).all():
         return 0.0
-    hop = max(1, int(sr * FRAME_MS / 1000))
-    mask = np.repeat(active_frames(x, sr), hop)[:len(x)]
-    return float(np.sum(mask)) / sr
+    return frame_activity(x, sr)[2]
 
 
 
@@ -53,7 +79,9 @@ def digital_silence_runs(x, sr, min_ms=2.0):
     if x.size == 0:
         return []
     min_n = max(1, int(round(sr * min_ms / 1000)))
-    z = np.concatenate([[0], (x == 0).astype(np.int8), [0]])
+    z = np.empty(x.size + 2, dtype=np.int8)
+    z[0] = z[-1] = 0
+    np.equal(x, 0, out=z[1:-1])  # write transitions directly; avoid a full-size bool + int8 copy
     d = np.diff(z)
     s, e = np.flatnonzero(d == 1), np.flatnonzero(d == -1)
     keep = (e - s) >= min_n
@@ -110,10 +138,22 @@ def integrated_lufs(x, sr):
 
 
 def load_mono(path):
+    """Decode once and retain the original channel metadata for signal checks."""
+    from types import SimpleNamespace
     import soundfile as sf
-    info = sf.info(str(path))
-    x, sr = sf.read(str(path), dtype="float32", always_2d=True)
-    return x.mean(axis=1), sr, info
+    with sf.SoundFile(str(path)) as f:
+        sr = f.samplerate
+        info = SimpleNamespace(
+            name=str(f.name), samplerate=sr, channels=f.channels, frames=f.frames,
+            duration=float(f.frames) / sr, format=f.format, subtype=f.subtype,
+            endian=f.endian, format_info=f.format_info, subtype_info=f.subtype_info,
+            sections=f.sections, extra_info=f.extra_info,
+        )
+        raw = f.read(dtype="float32", always_2d=True)
+    if info.channels > 1:
+        clipped = (np.count_nonzero(raw >= 0.999) + np.count_nonzero(raw <= -0.999))
+        info.channel_clipping_ratio = float(clipped / raw.size) if raw.size else 0.0
+    return raw.mean(axis=1), sr, info
 
 
 
@@ -177,11 +217,12 @@ def run_signal_checks(x, sr, info):
         return checks
     checks.append(_check("duration", "pass" if dur >= 0.3 else "fail", round(dur, 3)))
 
-    clip_ratio = float(np.mean(np.abs(x) >= 0.999))
+    clip_count = np.count_nonzero(x >= 0.999) + np.count_nonzero(x <= -0.999)
+    clip_ratio = float(clip_count / len(x))
     checks.append(_check("clipping", "fail" if clip_ratio > 5e-4 else ("warn" if clip_ratio > 0 else "pass"),
                          clip_ratio, "削波采样比例"))
 
-    peak = float(np.max(np.abs(x)))
+    peak = max(float(np.max(x)), float(-np.min(x)))
     checks.append(_check("peak", "warn" if peak > 0.99 or peak < 10 ** (-18 / 20) else "pass",
                          round(_db(peak), 2), "峰值 dBFS"))
 
@@ -218,28 +259,31 @@ def run_signal_checks(x, sr, info):
     checks.append(_check("file_edge_step", "warn" if _db(edge) > -40 else "pass", round(_db(edge), 2),
                          "文件首/末采样幅度（非零起止会产生开头/结尾咔哒声）"))
 
-    hop = max(1, int(sr * FRAME_MS / 1000))
-    voiced = active_frames(x, sr)
+    frame_rms, voiced, active_s, speech_rms = frame_activity(x, sr)
     if not voiced.any():
         checks.append(_check("speech_present", "fail", None, "整段音频近似静音"))
         return checks
-    # 帧掩码映射回采样级（尾部不足一帧的采样沿用最后一帧状态）
-    sample_voiced = np.repeat(voiced, hop)[:len(x)]
-    speech_db = _db(np.sqrt(np.mean(x[sample_voiced].astype(np.float64) ** 2)))
-    checks.append(_check("active_signal_seconds", "info", round(active_seconds(x, sr), 4),
+    speech_db = _db(speech_rms)
+    checks.append(_check("active_signal_seconds", "info", round(active_s, 4),
                          "10ms RMS>-50dBFS；不是语音识别/VAD"))
     checks.append(_check("loudness_rms", "pass" if -26 <= speech_db <= -14 else "warn",
                          round(speech_db, 2), "有声段 RMS dBFS，目标约 -20"))
 
-    # 底噪与嗡声：取 10 ms 帧 RMS 的第 10 百分位作为底噪（有声门限 -50 dBFS 会把 -50 dB 以上的底噪
-    # 也判为“有声”，故不能只用非有声帧）；嗡声只在同一批最安静帧上分析。仅告警，不据此降噪。
-    frame_rms = np.sqrt(np.mean(np.square(np.pad(x, (0, (-len(x)) % hop)).reshape(-1, hop)), axis=1, dtype=np.float64))
+    # 底噪与嗡声：复用同一批 10 ms 帧 RMS；仅告警，不据此降噪。
     if frame_rms.size >= 50:
-        p10 = float(np.percentile(frame_rms, 10))
+        hop = max(1, int(sr * FRAME_MS / 1000))
+        # Preserve the noise/hum estimator's prior zero-padded final-frame convention; the
+        # activity estimator above intentionally uses the true tail length for VAD proxy math.
+        noise_frame_rms = frame_rms
+        tail_samples = len(x) % hop
+        if tail_samples:
+            noise_frame_rms = frame_rms.copy()
+            noise_frame_rms[-1] *= np.sqrt(tail_samples / hop)
+        p10 = float(np.percentile(noise_frame_rms, 10))
         floor_db = _db(p10)
         checks.append(_check("noise_floor_dbfs", "warn" if floor_db > -45 else "pass", round(floor_db, 2),
                              "10 ms 帧 RMS 第 10 百分位 dBFS（底噪代理）；> -45 为可闻底噪的启发式阈值"))
-        checks.append(_hum_check(x, sr, frame_rms <= 10 ** (-50 / 20), hop, floor_db))
+        checks.append(_hum_check(x, sr, noise_frame_rms <= 10 ** (-50 / 20), hop, floor_db))
 
     # 内部长静音（首尾除外）
     first, last = np.argmax(voiced), len(voiced) - np.argmax(voiced[::-1])
@@ -260,11 +304,18 @@ def run_signal_checks(x, sr, info):
     # 静音区爆点：静音帧内出现的孤立尖峰
     # 候选：采样与前后邻点的偏离 > 0.1；仅当其 ±20 ms 邻域（排除自身 ±2 采样）整体低于 -40 dBFS 时才计为静音区爆点。
     # 注意：不能用“帧是否静音”做门限，因为爆点本身会把所在帧的能量抬高，导致永远判不出（已用注入爆点验证并修正）。
-    d2 = np.abs(x[1:-1] - 0.5 * (x[:-2] + x[2:]))
-    cand = np.where(d2 > 0.1)[0] + 1
+    d2 = np.empty(max(0, len(x) - 2), dtype=np.result_type(x.dtype, np.float32))
+    np.add(x[:-2], x[2:], out=d2)
+    d2 *= 0.5
+    np.subtract(x[1:-1], d2, out=d2)
+    np.abs(d2, out=d2)
+    cand = np.flatnonzero(d2 > 0.1) + 1
     clicks = 0
     if cand.size:
-        cs = np.concatenate([[0.0], np.cumsum(x.astype(np.float64) ** 2)])
+        cs = np.empty(len(x) + 1, dtype=np.float64)
+        cs[0] = 0.0
+        np.multiply(x, x, out=cs[1:])
+        np.cumsum(cs[1:], out=cs[1:])
         w = int(sr * 0.02)
         lo, hi = np.maximum(0, cand - w), np.minimum(len(x), cand + w + 1)
         clo, chi = np.maximum(0, cand - 2), np.minimum(len(x), cand + 3)
@@ -453,9 +504,7 @@ def _main(argv=None):
             "语境→意图→可听变化→引擎支持控制（语速/段间停顿）已核验；情绪/重音不支持，自然度需人评",
         ))
     if info.channels > 1:
-        import soundfile as sf
-        raw, _ = sf.read(str(path), dtype="float32", always_2d=True)
-        ratio = float(np.mean(np.abs(raw) >= .999))
+        ratio = info.channel_clipping_ratio
         checks.append(_check("channel_clipping", "fail" if ratio > 5e-4 else "warn" if ratio else "pass", ratio))
         checks.append(_check("multichannel", "warn", info.channels, "单声道混合可能掩盖反相；需逐通道复核"))
 

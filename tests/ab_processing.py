@@ -79,7 +79,13 @@ def cmd_capture(args):
             eng = engine_for(language)
             norm = tts.normalize_text(c["text"], eng.language, None)
             segs = tts.segment(norm, 90)
-            raws = [np.asarray(eng.synthesize(s.text), dtype=np.float32) for s in segs]
+            verify_assets = getattr(eng, "verify_integrity", None)
+            if callable(verify_assets):
+                verify_assets()
+            synthesize_loaded = getattr(eng, "_synthesize_loaded", eng.synthesize)
+            raws = [np.asarray(synthesize_loaded(s.text), dtype=np.float32) for s in segs]
+            if callable(verify_assets):
+                verify_assets()  # full hash once before this captured batch is accepted
             name = f"{args.engine}.{cid}.r{r}"
             np.savez(out / f"{name}.npz", **{f"seg{i:03d}": x for i, x in enumerate(raws)})
             item = dict(name=name, engine=args.engine, case=cid, repeat=r, language=eng.language,

@@ -114,6 +114,19 @@ def test_boundary_repair_is_noop_on_clean_boundaries():
     assert np.array_equal(x, y)
 
 
+def test_boundary_repair_inplace_matches_copy_without_mutating_default_input():
+    x, _, _ = _step_fixture()
+    original = x.copy()
+    copied, copy_stats = tts.boundary_repair(x, SR)
+    assert np.array_equal(x, original)  # default API remains non-mutating
+
+    inplace = original.copy()
+    returned, inplace_stats = tts.boundary_repair(inplace, SR, copy=False)
+    assert returned is inplace
+    assert np.array_equal(copied, returned)
+    assert copy_stats == inplace_stats
+
+
 # ------------------------------------------------------------------ synthesize_text minimal
 
 def test_minimal_default_pauses_are_exact_between_sentences():
