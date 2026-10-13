@@ -44,11 +44,124 @@ def _check(name, status, value=None, detail=""):
     return {"name": name, "status": status, "value": value, "detail": detail}
 
 
+def digital_silence_runs(x, sr, min_ms=2.0):
+    """Runs (start, end) of exact-zero samples lasting at least min_ms.
+
+    Shorter runs (single zero crossings) are speech, not silence.
+    """
+    x = np.asarray(x)
+    if x.size == 0:
+        return []
+    min_n = max(1, int(round(sr * min_ms / 1000)))
+    z = np.concatenate([[0], (x == 0).astype(np.int8), [0]])
+    d = np.diff(z)
+    s, e = np.flatnonzero(d == 1), np.flatnonzero(d == -1)
+    keep = (e - s) >= min_n
+    return [(int(a), int(b)) for a, b in zip(s[keep], e[keep])]
+
+
+def boundary_jumps(x, sr, min_ms=2.0):
+    """(index, |sample| adjacent to digital silence) at each speech<->silence boundary.
+
+    Digital silence starts from exactly 0, so this value is the sample-to-silence step.
+    """
+    out = []
+    for a, b in digital_silence_runs(x, sr, min_ms):
+        if a > 0:
+            out.append((a, float(abs(x[a - 1]))))
+        if b < len(x):
+            out.append((b, float(abs(x[b]))))
+    return out
+
+
+def true_peak_dbtp(x, sr, chunk_s=30.0):
+    """Inter-sample peak via 4x oversampling (scipy), computed in chunks to bound memory.
+
+    Each chunk carries 0.5 s of context on both sides so the filter transient is excluded.
+    None if scipy is unavailable.
+    """
+    try:
+        from scipy.signal import resample_poly
+    except ImportError:
+        return None
+    n = len(x)
+    if n < 8:
+        return None
+    ov, cs = int(sr * 0.5), max(1, int(sr * chunk_s))
+    peak = 0.0
+    for s0 in range(0, n, cs):
+        s1 = min(n, s0 + cs)
+        a, b = max(0, s0 - ov), min(n, s1 + ov)
+        up = resample_poly(np.asarray(x[a:b], dtype=np.float64), 4, 1)
+        peak = max(peak, float(np.max(np.abs(up[(s0 - a) * 4:(s1 - a) * 4]))))
+    return _db(peak)
+
+
+def integrated_lufs(x, sr):
+    """BS.1770 integrated loudness via pyloudnorm. None if unavailable or too short/silent."""
+    try:
+        import pyloudnorm as pyln
+    except ImportError:
+        return None
+    if len(x) < sr * 0.4:
+        return None
+    val = float(pyln.Meter(sr).integrated_loudness(np.asarray(x, dtype=np.float64)))
+    return val if np.isfinite(val) else None
+
+
 def load_mono(path):
     import soundfile as sf
     info = sf.info(str(path))
     x, sr = sf.read(str(path), dtype="float32", always_2d=True)
     return x.mean(axis=1), sr, info
+
+
+
+def _runs(mask):
+    """(start, end) of each True run in a boolean array."""
+    m = np.concatenate([[0], np.asarray(mask, dtype=np.int8), [0]])
+    d = np.diff(m)
+    return list(zip(np.flatnonzero(d == 1), np.flatnonzero(d == -1)))
+
+
+def hum_peak_ratio_db(x, sr, inactive_samples):
+    """Narrowband 50/60 Hz peak vs neighbouring spectrum, from CONTIGUOUS non-voiced runs >= 1 s.
+
+    Concatenating fragments creates broadband low-frequency leakage, so runs are analysed separately
+    and their Welch PSDs averaged. Returns the worst (max) peak-to-neighbourhood ratio in dB, or None.
+    """
+    try:
+        from scipy.signal import welch
+    except ImportError:
+        return None
+    nper = 8192
+    runs = [(a, b) for a, b in _runs(inactive_samples) if b - a >= max(nper, sr)]
+    if not runs:
+        return None
+    psd = None
+    for a, b in runs:
+        f, P = welch(np.asarray(x[a:b], dtype=np.float64), fs=sr, nperseg=nper)
+        psd = P if psd is None else psd + P
+    worst = None
+    for f0 in (50.0, 60.0):
+        peak = psd[np.abs(f - f0) <= 1.5]
+        neigh = psd[(np.abs(f - f0) >= 4) & (np.abs(f - f0) <= 12)]
+        if peak.size == 0 or neigh.size == 0 or np.median(neigh) <= 1e-30:
+            continue
+        r = 10 * np.log10(np.max(peak) / np.median(neigh) + 1e-30)
+        worst = r if worst is None else max(worst, r)
+    return None if worst is None else float(worst)
+
+
+def _hum_check(x, sr, inactive_samples_mask, hop, floor_db):
+    mask = np.repeat(inactive_samples_mask, hop)[:len(x)]
+    ratio = hum_peak_ratio_db(x, sr, mask)
+    if ratio is None:
+        return _check("hum_50_60hz_peak_db", "skip", None,
+                      "非有声连续段不足 1 s 或未安装 scipy，无法判定 50/60 Hz 嗡声")
+    status = "warn" if (ratio > 15 and floor_db > -60) else "pass"
+    return _check("hum_50_60hz_peak_db", status, round(ratio, 2),
+                  "非有声连续段 50/60 Hz 窄带峰相对邻近频带（±4–12 Hz 中位数）的 dB 值；>15 dB 为嗡声告警")
 
 
 def run_signal_checks(x, sr, info):
@@ -73,7 +186,37 @@ def run_signal_checks(x, sr, info):
                          round(_db(peak), 2), "峰值 dBFS"))
 
     dc = float(abs(np.mean(x)))
-    checks.append(_check("dc_offset", "warn" if dc > 0.01 else "pass", round(dc, 5)))
+    # 0.002 ≈ -54 dBFS；原 0.01（-40 dBFS）过宽，无法发现可闻前的直流偏移
+    checks.append(_check("dc_offset", "warn" if dc > 0.002 else "pass", round(dc, 5),
+                         "整段均值绝对值（阈值 0.002 启发式）"))
+
+    tp = true_peak_dbtp(x, sr)
+    if tp is None:
+        checks.append(_check("true_peak_dbtp", "skip", None, "未安装 scipy，无法做 4x 过采样真峰值"))
+    else:
+        checks.append(_check("true_peak_dbtp", "fail" if tp > 0 else ("warn" if tp > -1.0 else "pass"),
+                             round(tp, 2), "4x 过采样真峰值 dBTP；>0 表示重建后可能削波"))
+    lufs = integrated_lufs(x, sr)
+    if lufs is None:
+        checks.append(_check("integrated_loudness_lufs", "skip", None,
+                             "未安装 pyloudnorm 或音频过短，无法计算 BS.1770 综合响度"))
+    else:
+        checks.append(_check("integrated_loudness_lufs",
+                             "warn" if (lufs < -30 or lufs > -10) else "info", round(lufs, 2),
+                             "BS.1770 综合响度；仅极端值告警，目标需由交付场景决定"))
+
+    # 数字静音与语音交界的采样跳变（拼接点/人为停顿点的点击来源）
+    jumps = boundary_jumps(x, sr)
+    if jumps:
+        worst = max(v for _, v in jumps)
+        n_over = sum(1 for _, v in jumps if _db(v) > -40)
+        checks.append(_check("boundary_discontinuity", "warn" if n_over else "pass",
+                             round(_db(worst), 2),
+                             f"数字静音交界处的跳变：超过 -40 dBFS 的 {n_over}/{len(jumps)} 处"
+                             "（启发式；未校准的可闻阈值）"))
+    edge = max(abs(float(x[0])), abs(float(x[-1])))
+    checks.append(_check("file_edge_step", "warn" if _db(edge) > -40 else "pass", round(_db(edge), 2),
+                         "文件首/末采样幅度（非零起止会产生开头/结尾咔哒声）"))
 
     hop = max(1, int(sr * FRAME_MS / 1000))
     voiced = active_frames(x, sr)
@@ -87,6 +230,16 @@ def run_signal_checks(x, sr, info):
                          "10ms RMS>-50dBFS；不是语音识别/VAD"))
     checks.append(_check("loudness_rms", "pass" if -26 <= speech_db <= -14 else "warn",
                          round(speech_db, 2), "有声段 RMS dBFS，目标约 -20"))
+
+    # 底噪与嗡声：取 10 ms 帧 RMS 的第 10 百分位作为底噪（有声门限 -50 dBFS 会把 -50 dB 以上的底噪
+    # 也判为“有声”，故不能只用非有声帧）；嗡声只在同一批最安静帧上分析。仅告警，不据此降噪。
+    frame_rms = np.sqrt(np.mean(np.square(np.pad(x, (0, (-len(x)) % hop)).reshape(-1, hop)), axis=1, dtype=np.float64))
+    if frame_rms.size >= 50:
+        p10 = float(np.percentile(frame_rms, 10))
+        floor_db = _db(p10)
+        checks.append(_check("noise_floor_dbfs", "warn" if floor_db > -45 else "pass", round(floor_db, 2),
+                             "10 ms 帧 RMS 第 10 百分位 dBFS（底噪代理）；> -45 为可闻底噪的启发式阈值"))
+        checks.append(_hum_check(x, sr, frame_rms <= 10 ** (-50 / 20), hop, floor_db))
 
     # 内部长静音（首尾除外）
     first, last = np.argmax(voiced), len(voiced) - np.argmax(voiced[::-1])

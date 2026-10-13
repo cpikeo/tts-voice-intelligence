@@ -6,9 +6,9 @@
 ## 状态（不要把实现等同听感认证）
 
 - **Piper**：真实中文集成与 7 类重点场景（普通中文、数字日期、中英混合、专名、多音字、叙事转折、长文本）重复 ASR 评测；模型固定音色，支持逐段语速（`length_scale`）与段间停顿（`pause_after_ms`），无克隆/显式情绪。
-- **eSpeak NG**：中、英（US/GB）、德、日真实合成与信号检查；进程组硬超时与取消清理已实测，专业自然度未人评。
+- **eSpeak NG**：中、英（US/GB）、德、日真实合成与信号检查；eSpeak 进程组强杀与取消清理已实测；Piper 单次推理超时仅在推理返回后生效（不可中断）；专业自然度未人评。
 - **XTTS**：真实本地 API 调用实现，含单次读取参考绑定、模型/配置加载前后 SHA256 绑定、HMAC-SHA256 授权验签、pickle/ZIP 静态安全筛查与替身契约测试；**缺本地真实模型与合法授权参考语音，真实克隆效果未验证**。
-- **生产可靠性**：引擎硬超时（`--timeout`）、取消即停、整组交付原子事务（`transactional_write_bundle`，含母版 WAV + 派生 FLAC/OGG + JSON 报告回滚）、分段断点恢复（`--checkpoint-dir`）、子进程离线隔离（`--isolate-model`）。
+- **生产可靠性**：引擎超时（`--timeout`，子进程引擎为硬终止，进程内 Piper 为推理返回后生效）、取消即停、整组交付原子事务（`transactional_write_bundle`，含母版 WAV + 派生 FLAC/OGG + JSON 报告回滚）、分段断点恢复（`--checkpoint-dir`）、子进程离线隔离（`--isolate-model`）。
 - 完整审计与验证证据见 [AUDIT.md](AUDIT.md)、[VALIDATION.md](VALIDATION.md)。源码原仓库未附 LICENSE，软件/数据/模型许可须分别核对。
 
 ## 安装与运行
@@ -30,7 +30,7 @@ python scripts/tts.py synth --engine espeak --language en-US \
   --out output/english.wav --report output/english.json
 ```
 
-CLI 默认 **minimal**：保留原始动态与静音，超峰时整体衰减；`--direction` 中的 `pause_after_ms` 按节拍精确插入停顿。需旧版逐段 RMS 对齐与固定停顿时显式传 `--processing legacy`。低层 `synthesize_text` 保留 `legacy` 默认以兼容旧调用。
+CLI 默认 **minimal**：保留各段原始动态，不做逐段归一；段间按句/段落/子句插入停顿（默认 700/400/200 ms）；数字静音交界超过 -40 dBFS 的跳变仅对语音侧 2 ms 做淡变；超峰时整体衰减。`--direction` 中的 `pause_after_ms` 按节拍精确插入停顿。需旧版逐段 RMS 对齐时显式传 `--processing legacy`。低层 `synthesize_text` 保留 `legacy` 默认以兼容旧调用。低层 `synthesize_text` 保留 `legacy` 默认以兼容旧调用。
 输入最多 10 万字符、输出最多 30 分钟；母版 WAV、派生 FLAC/OGG 与 JSON 报告采用整组事务提交，任一文件失败即全组回滚。
 
 合成退出码：`0` 生成成功（非质量认证）/ `1` 空或无效文本 / `2` 引擎不可用 / `3` 合成或超时失败 / `4` 输入、配置、输出错误。
@@ -55,7 +55,7 @@ ASR/CER 仅作诊断代理，受同音字与数字转写影响，不等同听感
 ## 测试与复现
 
 ```bash
-python -m pytest -q                         # 无 Piper 模型时明确 skip 8 项 Piper 与 1 项 XTTS
+python -m pytest -q                         # 无 Piper 模型时明确 skip 10 项 Piper 与 1 项 XTTS（当前 173 passed / 11 skipped）
 TTS_PIPER_MODEL=/path/to/model.onnx python -m pytest -q
 bash validation/reproduce.sh /path/to/model.onnx new-validation private-out
 ```

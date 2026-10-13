@@ -1,8 +1,0 @@
-{
-  "package": "validation/listening-unrated",
-  "samples": 9,
-  "seed": 17,
-  "listen_dir": "validation/listening-unrated/listen",
-  "sheet": "validation/listening-unrated/ratings/ratings.csv",
-  "isolated_map": true
-}

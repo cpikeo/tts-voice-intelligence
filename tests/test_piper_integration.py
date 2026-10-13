@@ -123,3 +123,25 @@ def test_synth_cli_empty_after_normalize_returns_1(tmp_path):
     script.write_text("***", encoding="utf-8")
     assert tts.main(["synth", "--model", MODEL, "--input", str(script),
                      "--out", str(tmp_path / "o.wav")]) == 1
+
+
+def test_minimal_default_join_is_policy_pause_and_clean(engine):
+    """Real Piper, CLI-default minimal path: sentence join = exact 400 ms policy pause; no step > -40 dBFS."""
+    audio, sr, rep = tts.synthesize_text(engine, "这是第一句话的内容。这是第二句话的内容，用来检查拼接处的停顿。")
+    assert rep["segment_count"] == 2
+    x = np.asarray(audio, dtype=np.float32)
+    runs = [(a, b) for a, b in qa.digital_silence_runs(x, sr, min_ms=100)]
+    assert runs, "expected an inserted pause of digital silence at the sentence join"
+    join_ms = max((b - a) * 1000.0 / sr for a, b in runs)
+    assert join_ms == pytest.approx(400.0, abs=5.0)
+    jumps = qa.boundary_jumps(x, sr)
+    assert all(qa._db(v) <= -40 for _, v in jumps), [qa._db(v) for _, v in jumps]
+    assert rep["boundary_repair"] is not None
+
+
+def test_real_engine_true_peak_below_zero_dbtp(engine):
+    audio, sr, rep = tts.synthesize_text(engine, TEXT)
+    tp = qa.true_peak_dbtp(np.asarray(audio, dtype=np.float32), sr)
+    if tp is None:
+        pytest.skip("scipy not installed")
+    assert tp < 0.0

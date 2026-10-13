@@ -460,16 +460,20 @@ class EspeakEngine(Engine):
                 raise EngineError(f"eSpeak 进程退出码 {proc.returncode}: {err_msg}")
             x, sr = sf.read(io.BytesIO(stdout), dtype="float32")
             if sr != self.sample_rate:
-                raise ValueError(f"意外采样率 {sr}")
+                raise EngineError(f"eSpeak 输出采样率 {sr} 与期望 {self.sample_rate} 不符")
             return x
         except subprocess.TimeoutExpired as e:
             self._terminate_proc(proc)
             raise EngineTimeoutError(f"eSpeak 合成超时（>{limit:.2f}s）") from e
-        except BaseException:
+        except EngineError:
             self._terminate_proc(proc)
             raise
-        except (subprocess.SubprocessError, ValueError, RuntimeError) as e:
+        except (subprocess.SubprocessError, ValueError, RuntimeError, OSError) as e:
+            self._terminate_proc(proc)
             raise EngineError(f"eSpeak 合成失败：{e}") from e
+        except BaseException:  # 取消/中断：仍须清理整个进程组
+            self._terminate_proc(proc)
+            raise
 
     @staticmethod
     def _terminate_proc(proc):

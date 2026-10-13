@@ -186,6 +186,60 @@ def fade(x, sr, ms=12):
     return x
 
 
+def trim_margins(x, sr, pad_ms=30, head=True, tail=True, thr_db=-50.0):
+    """Remove only sub-threshold leading/trailing margins, keeping pad_ms of them.
+
+    Used when a policy pause replaces the engine's own boundary silence, so the inserted pause
+    is exact. Speech samples are never modified.
+    """
+    m = _voiced(x, thr_db)
+    if not m.any():
+        return x
+    i0 = int(np.argmax(m)) if head else 0
+    i1 = len(m) - int(np.argmax(m[::-1])) if tail else len(m)
+    pad = int(sr * pad_ms / 1000)
+    return x[max(0, i0 - pad): min(len(x), i1 + pad)]
+
+
+def _fade_out(n):
+    """Raised-cosine taper of length n, ~1 at the first sample and ~0 at the last."""
+    return 0.5 * (1 + np.cos(np.pi * np.arange(1, n + 1) / (n + 1)))
+
+
+def boundary_repair(x, sr, thr_db=-40.0, ms=2.0):
+    """Conditional click repair at speech <-> digital-silence boundaries.
+
+    Only boundaries whose adjacent speech sample exceeds thr_db are touched, with a short
+    fade applied on the speech side. Clean boundaries and all other samples are unchanged.
+    Returns (audio, stats); stats record how many boundaries were repaired and the worst step
+    before and after, so the repair is auditable.
+    """
+    from qa import boundary_jumps, digital_silence_runs, _db
+    y = np.array(x, dtype=np.float32, copy=True)
+    n_fade = max(2, int(sr * ms / 1000))
+    thr = 10 ** (thr_db / 20)
+    before = [v for _, v in boundary_jumps(x, sr)]
+    repairs = 0
+    for a, b in digital_silence_runs(x, sr):
+        if a > 0 and abs(float(x[a - 1])) > thr:      # speech ends at a-1: fade out into silence
+            n = min(n_fade, a)
+            y[a - n:a] = (y[a - n:a] * _fade_out(n)).astype(np.float32)
+            repairs += 1
+        if b < len(x) and abs(float(x[b])) > thr:     # speech starts at b: fade in from silence
+            n = min(n_fade, len(x) - b)
+            y[b:b + n] = (y[b:b + n] * _fade_out(n)[::-1]).astype(np.float32)
+            repairs += 1
+    after = [v for _, v in boundary_jumps(y, sr)]
+    stats = {
+        "repairs": repairs,
+        "fade_ms": ms,
+        "threshold_dbfs": thr_db,
+        "max_step_before_dbfs": round(_db(max(before)), 2) if before else None,
+        "max_step_after_dbfs": round(_db(max(after)), 2) if after else None,
+    }
+    return y, stats
+
+
 _ALLOWED_DIRECTION_TOP_KEYS = {
     "intent", "audience", "character", "context", "audible_goal",
     "unsupported_capabilities", "beats",
@@ -262,7 +316,7 @@ def _atomic_write_json(path, data):
 def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20.0,
                     pauses=None, peak_db=-1.0, lexicon=None, language=None, processing="legacy",
                     max_output_seconds=1800, direction=None, segment_timeout=None,
-                    cancel_event=None, checkpoint_dir=None):
+                    cancel_event=None, checkpoint_dir=None, boundary_repair_enabled=True):
     """完整流水线，返回 (audio float32, sr, report dict)。"""
     pauses = pauses if pauses is not None else {"para": 700, "sentence": 400, "clause": 200, "none": 0}
     sr = engine.sample_rate
@@ -303,6 +357,7 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
             ckpt_state = prior
 
     parts, seg_reports, warnings = [], [], text_warnings(original, language)
+    prev_gap = 0
     output_samples = 0
     t_total = 0.0
     resumed_count = 0
@@ -403,8 +458,14 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
 
         t_total += dt
         x = raw.astype(np.float32)
+        gap = beat.get("pause_after_ms", pauses.get(seg.pause_after, 0))
         if processing == "legacy":
             x = trim_silence(x, sr)
+        else:
+            # minimal：仅当本段前/后存在策略停顿时，才替换引擎自带的边界静音（保留 30 ms 余量）；
+            # 语音采样不变。无停顿时完全保持引擎原始输出（与旧版逐字节一致）。
+            x = trim_margins(x, sr, head=prev_gap > 0, tail=gap > 0)
+        prev_gap = gap
         if x.size < sr * 0.05:
             warnings.append(f"第 {i + 1} 段输出过短，可能发音缺失：{seg.text[:30]}")
         if processing == "legacy":
@@ -416,7 +477,6 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
         elif processing == "legacy" and abs(rms_db - target_db) > 1.0:
             warnings.append(f"第 {i + 1} 段响度 {rms_db:.1f} dBFS 偏离目标 {target_db:.1f} dBFS"
                             f"（已触发 ±12 dB 增益限制）：{seg.text[:30]}")
-        gap = beat.get("pause_after_ms", pauses.get(seg.pause_after, 0))
         seg_reports.append({
             "index": i, "text": seg.text, "seconds": round(dur, 3),
             "synth_seconds": round(dt, 3), "pause_after": seg.pause_after,
@@ -435,6 +495,12 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
             raise EngineError("输出超过时长上限；请按章节分批交付")
 
     audio = np.concatenate(parts)
+    repair_stats = None
+    if boundary_repair_enabled:
+        audio, repair_stats = boundary_repair(audio, sr)  # 仅修复超阈值的数字静音交界，长度与段映射不变
+        if repair_stats["repairs"]:
+            warnings.append(f"已修复 {repair_stats['repairs']} 处数字静音交界的点击风险（最大跳变 "
+                            f"{repair_stats['max_step_before_dbfs']} → {repair_stats['max_step_after_dbfs']} dBFS）")
     peak = float(np.max(np.abs(audio)))
     limit = 10 ** (peak_db / 20)
     if peak > limit:
@@ -552,6 +618,7 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
         "peak_dbfs": round(_db(float(np.max(np.abs(audio)))), 2),
         # 段间一致性：各段对齐后的有声 RMS 与其标准差（客观代理，音色一致性仍需人工听评）
         "segment_rms_std_db": rms_std,
+        "boundary_repair": repair_stats,
         "params": {"normalize": normalize, "max_chars": max_chars, "target_db": target_db if processing == "legacy" else None,
                    "pause_ms": pauses, "peak_limit_dbfs": peak_db,
                    "lexicon_entries": len(lexicon) if lexicon else 0, "processing": processing,
@@ -817,8 +884,8 @@ def cmd_synth(args):
             ckpt_res = Path(args.checkpoint_dir).resolve()
             if any(ckpt_res == p.resolve() for p in destinations + sources):
                 raise ValueError("checkpoint-dir 不能与输入或输出路径冲突")
-        if args.processing == "minimal" and ((args.pause_para, args.pause_sentence, args.pause_clause) != (700, 400, 200) or args.target_db != -20):
-            raise ValueError("停顿/目标RMS参数仅在 --processing legacy 下生效")
+        if args.processing == "minimal" and args.target_db != -20:
+            raise ValueError("目标RMS参数仅在 --processing legacy 下生效（minimal 不做响度对齐）")
         engine = build_engine(args)
     except EngineError as e:
         print(f"引擎不可用：{e}", file=sys.stderr)
@@ -834,9 +901,10 @@ def cmd_synth(args):
             processing=args.processing, max_output_seconds=args.max_seconds, direction=direction,
             lexicon=load_lexicon(args.lexicon) if args.lexicon else None,
             pauses={"para": args.pause_para, "sentence": args.pause_sentence,
-                    "clause": args.pause_clause, "none": 0} if args.processing == "legacy" else {},
+                    "clause": args.pause_clause, "none": 0},
             segment_timeout=args.timeout,
             checkpoint_dir=getattr(args, "checkpoint_dir", None),
+            boundary_repair_enabled=not args.no_boundary_repair,
         )
     except EngineError as e:
         print(f"合成失败：{e}", file=sys.stderr)
@@ -924,14 +992,18 @@ def main(argv=None):
     s.add_argument("--lexicon", help="发音词典 TSV（原词<TAB>朗读形式）")
     s.add_argument("--max-chars", type=int, default=90, help="单段最大字符数")
     s.add_argument("--direction", help="语义声音策略 JSON，按规范化后的段落文本匹配 beats")
-    s.add_argument("--processing", choices=["minimal", "legacy"], default="minimal", help="minimal 保留原动态；legacy 逐段对齐并加静音")
+    s.add_argument("--processing", choices=["minimal", "legacy"], default="minimal",
+                   help="minimal：保留引擎原始段落，仅在句/段边界插入停顿并修复数字静音交界；"
+                        "legacy：额外逐段 RMS 对齐（±12 dB）与 12 ms 淡变")
+    s.add_argument("--no-boundary-repair", action="store_true",
+                   help="关闭条件性边界点击修复（仅用于 A/B 对照；默认开启且只在检测到超阈值跳变时生效）")
     s.add_argument("--max-seconds", type=float, default=1800, help="输出时长上限，最大1800秒")
     s.add_argument("--checkpoint-dir", help="分段断点保存与失败恢复目录（校验文本/模型/参数哈希一致后恢复）")
     s.add_argument("--isolate-model", action="store_true", help="在独立隔离子进程中加载模型并执行合成")
     s.add_argument("--target-db", type=float, default=-20.0, help="段内目标 RMS（dBFS）")
-    s.add_argument("--pause-para", type=int, default=700, help="段落间停顿 ms")
-    s.add_argument("--pause-sentence", type=int, default=400, help="句间停顿 ms")
-    s.add_argument("--pause-clause", type=int, default=200, help="子句间停顿 ms")
+    s.add_argument("--pause-para", type=int, default=700, help="段落间停顿 ms（minimal 与 legacy 均生效；0 关闭）")
+    s.add_argument("--pause-sentence", type=int, default=400, help="句间停顿 ms（minimal 与 legacy 均生效；0 关闭）")
+    s.add_argument("--pause-clause", type=int, default=200, help="子句间停顿 ms（minimal 与 legacy 均生效；0 关闭）")
     s.set_defaults(func=cmd_synth)
 
     args = p.parse_args(raw_argv)

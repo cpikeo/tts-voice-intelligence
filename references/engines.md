@@ -2,11 +2,11 @@
 
 决策以 SKILL.md 为准。适配器在 `scripts/engines.py`；实例 JSON 能力比此矩阵更具体。
 
-| 引擎 | 实现/验证 | 语言与地区 | 音色/说话人 | 语速/停顿/情绪 | 克隆 | 硬超时/绑定/隔离 | 许可 |
+| 引擎 | 实现/验证 | 语言与地区 | 音色/说话人 | 语速/停顿/情绪 | 克隆 | 超时/绑定/隔离 | 许可 |
 |---|---|---|---|---|---|---|---|
-| Piper | 真实实现；本次 huayan 中文 7 类场景实测 | 模型配置 locale；裸语言匹配同根地区，不跨地区静默回退 | 固定模型；配置内 speaker id | 逐段 `length_scale` 与 `pause_after_ms`；无情绪/重音/音色接口 | 不支持 | 默认 60s 硬超时；加载与合成前后校验模型/配置哈希；ONNX 路径穿越筛查；可选 `--isolate-model` | piper-tts GPL-3.0-or-later；每模型数据/权重许可单独确认 |
-| eSpeak NG | 真实子进程实现；中/英/德/日实测 | 从本机 `--voices` 读取；显式地区不回退 | 地区默认 voice | 逐段 `length_scale`（映射 wpm）与 `pause_after_ms`；无情绪接口 | 不支持 | 独立进程组（`start_new_session`）+ 默认 60s 硬超时；超时或取消时 `SIGKILL` 清理进程组 | 软件 GPL-3.0-or-later；随系统语音数据许可另核对 |
-| XTTS | 本地 coqui-tts API 实现；替身契约、验签与门禁实测，真实克隆缺资产未验证 | 配置 `languages` 与授权 `allowed_languages` 交集；不降级地区 | 已授权参考音色 | 仅支持管线 `pause_after_ms`；不暴露语速、情绪或重音 | 支持调用，目标音色保持未实测 | 默认 60s 硬超时；单次内存读入消除参考音频 TOCTOU；HMAC-SHA256 授权验签；pickle/ZIP 静态安全拦截；可选 `--isolate-model` | 包通常 MPL-2.0；XTTS 权重常为 CPML，不可假定商用 |
+| Piper | 真实实现；本次 huayan 中文 7 类场景实测 | 模型配置 locale；裸语言匹配同根地区，不跨地区静默回退 | 固定模型；配置内 speaker id | 逐段 `length_scale` 与 `pause_after_ms`；无情绪/重音/音色接口 | 不支持 | 默认 60s 超时（进程内，推理返回后生效，不可中断；已实测）；加载与合成前后校验模型/配置哈希；ONNX 路径穿越筛查；`--isolate-model` 子进程组可硬终止 | piper-tts GPL-3.0-or-later；每模型数据/权重许可单独确认 |
+| eSpeak NG | 真实子进程实现；中/英/德/日实测 | 从本机 `--voices` 读取；显式地区不回退 | 地区默认 voice | 逐段 `length_scale`（映射 wpm）与 `pause_after_ms`；无情绪接口 | 不支持 | 独立进程组（`start_new_session`）+ 默认 60s 超时；超时或取消时 `killpg` 清理进程组（硬终止） | 软件 GPL-3.0-or-later；随系统语音数据许可另核对 |
+| XTTS | 本地 coqui-tts API 实现；替身契约、验签与门禁实测，真实克隆缺资产未验证 | 配置 `languages` 与授权 `allowed_languages` 交集；不降级地区 | 已授权参考音色 | 仅支持管线 `pause_after_ms`；不暴露语速、情绪或重音 | 支持调用，目标音色保持未实测 | 默认 60s 超时（进程内，同 Piper 不可中断，未实测）；单次内存读入消除参考音频 TOCTOU；HMAC-SHA256 授权验签；pickle/ZIP 静态安全拦截；可选 `--isolate-model` | 包通常 MPL-2.0；XTTS 权重常为 CPML，不可假定商用 |
 
 没有默认模型排名；历史无原始产物的结论已撤回。eSpeak 的多语言实现不是专业自然度背书。仓库本身未附 LICENSE：不要擅自假设源码可按某许可证分发。
 

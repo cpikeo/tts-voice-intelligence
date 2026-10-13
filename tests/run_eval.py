@@ -85,7 +85,7 @@ def main(argv=None):
                 try:
                     audio, sr, rep = tts.synthesize_text(engine, c["text"], normalize=norm,
                                                        language=language, lexicon=lex,
-                                                       processing="minimal", pauses={})
+                                                       processing="minimal")  # CLI 默认：含策略停顿与边界修复
                     tts.write_audio(wav, audio, sr)
                     x, sr, info = qa.load_mono(wav)
                     run.update(wav=str(wav), sha256=tts.sha256_file(wav), synthesis=rep,
