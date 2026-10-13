@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+out/
+# 音频产物不入库
+*.wav
+*.flac
+*.ogg
+!tests/**/*.wav

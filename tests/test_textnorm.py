@@ -4,13 +4,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import pytest  # noqa: E402
-from textnorm import int_zh, normalize_zh  # noqa: E402
+from textnorm import int_zh, mask_numbers, normalize_zh  # noqa: E402
 
 
 @pytest.mark.parametrize("n,expected", [
     (0, "零"), (10, "十"), (12, "十二"), (20, "二十"), (105, "一百零五"),
     (1005, "一千零五"), (1050, "一千零五十"), (10000, "一万"), (10086, "一万零八十六"),
     (120000, "十二万"), (100000, "十万"),
+    # 亿级：此前 >=1e8 一律逐位读（100000000 -> 一零零零零零零零零）
+    (100000000, "一亿"), (100000001, "一亿零一"), (150000000, "一亿五千万"),
+    (105000000, "一亿零五百万"), (100010000, "一亿零一万"), (1200000000, "十二亿"),
 ])
 def test_int_zh(n, expected):
     assert int_zh(n) == expected
@@ -27,9 +30,35 @@ def test_int_zh(n, expected):
     ("GPU & CPU", "GPU 和 CPU"),
     ("等待……", "等待……"),
     ("**重点**", "重点"),
+    # 日期分隔符：此前 2026/10/12 会变成 “二零二六/十/十二”
+    ("截止日期是2026/10/12。", "截止日期是二零二六年十月十二日。"),
+    ("截止日期是2026-10-12。", "截止日期是二零二六年十月十二日。"),
+    # 亿/万：此前 2000万 会被年份规则逐位读成 “二零零零万”
+    ("1亿2000万用户", "一亿二千万用户"),
+    ("2026年营收增长2000万元", "二零二六年营收增长二千万元"),
+    ("估值达100000000元", "估值达一亿元"),
+    ("营收3.5亿元", "营收三点五亿元"),
+    # 负号（不触碰范围 10-20）
+    ("温度是-5度", "温度是负五度"),
+    ("区间是10-20", "区间是十-二十"),
+    # 编号/型号：逐位读，不做数值读法
+    ("订单号A-1024已完成", "订单号A-一零二四已完成"),
+    ("升级到GPT-4", "升级到GPT-四"),
 ])
 def test_normalize(src, expected):
     assert normalize_zh(src) == expected
+
+
+def test_lexicon_reading_form_is_final():
+    """词典给出的朗读形式不得被后续数字规则二次改写。"""
+    assert normalize_zh("见版本三", [("版本三", "v3")]) == "见v3"
+    assert normalize_zh("Python 3.13 发布", [("Python", "派森")]) == "派森 三点一三 发布"
+
+
+def test_mask_numbers_is_symmetric():
+    """遮蔽数词必须对中英文数字一视同仁，才能用于两侧对称的 CER。"""
+    assert mask_numbers("会议定在2026年10月12日") == "会议定在年月日"
+    assert mask_numbers("会议定在二零二六年十月十二日") == "会议定在年月日"
 
 
 def test_normalize_keeps_plain_chinese():

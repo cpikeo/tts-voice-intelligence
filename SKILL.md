@@ -3,7 +3,7 @@ name: tts-voice-intelligence
 description: 文本转语音（TTS）端到端技能。理解朗读场景并制定声音策略（语速、停顿、表达节奏），对中文文本做数字、年份、时刻、百分比与专有名词规范化，分段合成并统一响度，输出 WAV 母版（可选 FLAC/OGG），再做音频验收（解码、削波、静音、回听识别字符错误率）。适用于配音、旁白、语音播报、有声内容、朗读稿生成与合成音频质量检查。当用户提到 text-to-speech、TTS、语音合成、朗读、配音、旁白、voice over、把文字转成语音、检查合成音频质量时使用。不做声音克隆。
 compatibility: 已在 Python 3.13 上测试（更低版本未验证）；需要 numpy 与 soundfile。piper 引擎需要 piper-tts（GPL-3.0）及用户自备的 Piper .onnx 模型；中文模型还需要 g2pW 相关依赖。CPU 可运行，不需要 GPU 或 ffmpeg。
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # TTS Voice Intelligence
@@ -51,12 +51,14 @@ python scripts/tts.py check --model MODEL.onnx
 
 ### 4. 文本规范化
 
-规范化由流水线自动完成（`scripts/textnorm.py`）：年份逐位读（2026→二零二六）、时刻（10:30→十点三十分）、百分比（3.5%→百分之三点五）、小数与整数，以及全角字符统一。
+规范化由流水线自动完成（`scripts/textnorm.py`）：日期分隔符（`2026/10/12`、`2026-10-12`→二零二六年十月十二日）、年份逐位读（2026→二零二六）、时刻（10:30→十点三十分）、百分比（3.5%→百分之三点五）、亿/万 单位（1亿2000万→一亿二千万）、亿级大数（100000000→一亿）、负号（-5→负五）、编号型号（A-1024、GPT-4→逐位读）、小数与整数，以及全角字符统一。
+
+**规范化覆盖不到、必须先人工改写**的形式：电话号码、价格区间与范围（10-20 只转成“十-二十”）、比值（3:2）、分数、复杂公式、表格、代码、列表符号。
 
 需要人工判断的部分：
 
-- **专有名词与英文缩写**：中文模型对英文读音不稳定。用 `--lexicon` 指定朗读形式（格式见 `assets/lexicon.example.tsv`）。词典读音必须由用户或业务方确认，不要替用户臆造品牌读音。
-- **改写**：规范化覆盖不到的形式（如复杂公式、表格、代码、列表符号）应先改写成自然口语文字。
+- **专有名词与英文缩写**：中文模型对英文读音不稳定。用 `--lexicon` 指定朗读形式（格式见 `assets/lexicon.example.tsv`）。词典读音必须由用户或业务方确认，不要替用户臆造品牌读音。词典给出的朗读形式是最终形式，不会被后续数字规则改写。
+- **多音字**：没有引擎侧的消歧能力。发现误读时，用词典或改写词语搭配消歧（如“重庆”写成“重庆市”），不要靠反复重合成碰运气。
 - 合成前检查 `report.json` 中的 `normalized_text`，确认关键数字与专名读法正确。
 
 ### 5. 合成
@@ -71,7 +73,9 @@ python scripts/tts.py synth --model MODEL.onnx --input script.txt \
 
 - 引擎关闭了逐块峰值归一化（否则每段会被拉到峰值 1.0，段间响度不一致），响度完全由流水线控制。
 - 单段失败会自动重试一次，仍失败则报错并给出段落位置。
-- 退出码：`0` 成功；`1` 输入为空；`2` 引擎不可用；`3` 合成失败。
+- 报告含 `segment_rms_std_db`（段间响度标准差）与每段 `rms_dbfs`；超过 1 dB 会在 `warnings` 中提示。
+  这是**客观一致性代理**，不代表音色一致性，仍需人工听评。
+- 退出码：`0` 成功；`1` 输入为空（含规范化后为空）；`2` 引擎不可用；`3` 合成失败；`4` 输出参数错误（如 MP3）。
 
 ### 6. 验收
 
@@ -81,13 +85,37 @@ python scripts/qa.py out/narration.wav --text-file script.txt \
 ```
 
 - 信号层（默认开启）：可解码、时长、削波、峰值、直流、有声 RMS、内部长静音（>2.5 秒为 warn）、静音区爆点。
-- 回听层（`--asr small`，需安装 faster-whisper）：识别结果与规范化原文比较 CER。阈值见 `--profile`（default：warn 0.10、fail 0.25）。
+- 回听层（`--asr small`，需安装 faster-whisper）：识别结果与规范化原文比较，输出**三个互不混淆的量**：
+  - `asr_cer`（参与判定）：整体 CER。注意 whisper 会把听到的中文数字写成阿拉伯数字，
+    比对时必须读回中文，因此它无法区分“读法对”与“数字串对”。
+  - `asr_cer_text`（诊断）：按同一规则遮蔽数词后的 CER，只衡量非数字部分的发音，
+    不受规范化链路影响。
+  - `asr_num_cer`（诊断）：仅数词部分。只能验证“听到的数字串对不对”，**不能验证朗读风格**。
+- 阈值见 `--profile`（default：warn 0.10、fail 0.25）。实测同一输入重复合成的 CER 波动
+  可达 ±0.1，**单条用例的 CER 差异小于 0.1 不具有统计意义**；`strict`（0.05）低于该噪声水平，
+  只在多次重复取均值后使用。
 - 退出码：`0` 无 fail；`1` 存在 fail；`2` 文件不可读。
 - 若未启用回听，必须在交付说明中写明“未做回听验证”。
 
 客观指标只能作为代理。自然度、表现力、音色一致性需要人工抽听，本技能不能替代。
 
-### 7. 针对性修复
+### 7. 人工听评（盲听）
+
+自然度、表现力、韵律、音色一致性与段间连续性**只能由人判断**。交付前至少做一轮：
+
+```bash
+python scripts/blindtest.py prepare --audio out/*.wav --out pkg --seed 7
+# 按 pkg/blind_map.json 的 order 试听 pkg/listen/ 下的匿名样本，填写 pkg/ratings.csv（1–5 分）
+python scripts/blindtest.py score   --pkg pkg     # 汇总
+python scripts/blindtest.py unblind --pkg pkg     # 评完再揭示样本与文件的对应关系
+```
+
+- 六个维度：发音准确度、自然度、韵律、表现力、音色一致性、段间连续性。
+- 同一 `--seed` 可复现同一套匿名编号与试听顺序，便于跨轮次比较。
+- 记分表里不出现原始文件名；**评完前不要打开 `blind_map.json`**，否则就不是盲测。
+- 本技能只记录与汇总评分，**不能代替人打分**。未做人工听评时，交付说明必须写明。
+
+### 8. 针对性修复
 
 只修复验收中实际出现的问题，用最小改动：
 
@@ -100,17 +128,19 @@ python scripts/qa.py out/narration.wav --text-file script.txt \
 | 警告“输出过短” | 该段文本 | 检查是否为纯符号或乱码，修改后重跑 |
 | 语速太快或太慢 | 听感 | 调整 `--length-scale` 一次，再重跑 |
 | 引擎报错 | 报错信息 | 按 `references/engines.md` 第 6 节排查 |
+| 听感平淡/生硬（客观指标正常） | 人工听评 | 这是模型的表达能力上限，先确认无文本与分段问题；不要靠调参掩盖，必要时说明边界 |
 
 修复后只重跑受影响的环节。例如只改了词典，就重新合成并重新验收，不必重复评测整个用例集。
 
-### 8. 交付
+### 9. 交付
 
 交付前逐项确认：
 
 - [ ] 母版 WAV 存在，`qa.py` 退出码为 0，或已说明未通过的项与原因
 - [ ] 时长与文本量匹配（`qa.py` 的 `speech_rate_chars_per_s`，合理范围约 1.5–8 字/秒）
 - [ ] 派生格式（如 FLAC/OGG）可解码
-- [ ] `report.json` 与 `qa.json` 已保存
+- [ ] `report.json` 与 `qa.json` 已保存；`report.json` 含模型路径与 sha256、参数、词典条目数、时间戳
+- [ ] 已做人工听评并保留 `scores.json`，或明确写明“未做人工听评”
 - [ ] 交付说明包含：使用的引擎与模型、模型许可、参数、词典、已做与未做的验证、已知限制
 
 交付说明要如实写出：哪些是实测数字，哪些是启发式判断，哪些未验证（如人工听评、GPU、MP3）。
@@ -130,5 +160,6 @@ python scripts/qa.py out/narration.wav --text-file script.txt \
 |---|---|---|
 | `scripts/tts.py` | 合成流水线与引擎适配（`check` / `synth`） | numpy、soundfile；piper 引擎需 piper-tts |
 | `scripts/textnorm.py` | 中文文本规范化与发音词典（被 tts.py、qa.py 引用） | 标准库 |
-| `scripts/qa.py` | 音频验收，可对任意 WAV/FLAC/OGG 运行 | numpy、soundfile；`--asr` 需 faster-whisper；繁简转换需 opencc-python-reimplemented |
+| `scripts/qa.py` | 音频验收，可对任意 WAV/FLAC/OGG 运行 | numpy、soundfile；`--asr` 需 faster-whisper + scipy；繁简转换需 opencc-python-reimplemented |
+| `scripts/blindtest.py` | 盲听听评：生成匿名样本与记分表、汇总评分、揭示对应 | 标准库 |
 | `tests/` | 单元测试（无需模型）、真实引擎集成测试（需 `TTS_PIPER_MODEL`）、评测脚本 `run_eval.py` | pytest |

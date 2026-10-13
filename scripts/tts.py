@@ -7,6 +7,8 @@
   check   检查环境与引擎可用性（JSON 输出，不合成）
   synth   合成文本为音频，输出 WAV 母版（可选 FLAC/OGG 派生件）与 JSON 报告
 
+退出码：0 成功；1 输入为空；2 引擎不可用；3 合成失败；4 输出/参数错误。
+
 引擎接口（新增引擎只需实现 Engine）：
   available() -> (bool, str)        可用性与原因
   synthesize(text) -> np.ndarray    float32 单声道 [-1, 1]
@@ -15,6 +17,8 @@
 依赖：numpy, soundfile；piper 引擎另需 piper-tts 包与 .onnx 模型（见 references/engines.md）。
 """
 import argparse
+import datetime as _dt
+import hashlib
 import json
 import platform
 import re
@@ -27,6 +31,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from textnorm import load_lexicon, normalize_zh  # noqa: E402
+
+VERSION = "0.2.0"
 
 
 class EngineError(RuntimeError):
@@ -108,6 +114,15 @@ class Segment:
     pause_after: str  # "para" | "sentence" | "clause" | "none"
 
 
+_PUNCT_ONLY = re.compile(r"^[\s，。！？!?…、；;：:,.~—\-]+$")
+
+
+def _has_content(s):
+    """是否含可朗读内容。纯标点片段（如“！”“…”）不能单独成段，
+    否则会被引擎当成一个独立句子合成，并额外插入句间停顿。"""
+    return bool(s) and not _PUNCT_ONLY.match(s)
+
+
 def _split_long(sentence, max_chars):
     if len(sentence) <= max_chars:
         return [sentence]
@@ -131,22 +146,32 @@ def _split_long(sentence, max_chars):
 
 
 def segment(text, max_chars=90):
-    """按段落、句子、子句切分；每段记录其后应插入的停顿类型。"""
+    """按段落、句子、子句切分；每段记录其后应插入的停顿类型。
+
+    纯标点片段（如“真的吗？！”里的“！”）并入上一段，不单独成段。
+    """
     segs = []
     paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
     for para in paragraphs:
         sents = [s.strip() for s in re.split(r"(?<=[。！？!?…])\s*|(?<=[.?!])\s+", para) if s.strip()]
+        items = []
         for si, sent in enumerate(sents):
             pieces = _split_long(sent, max_chars)
             for k, piece in enumerate(pieces):
-                last_in_para = si == len(sents) - 1 and k == len(pieces) - 1
-                if last_in_para:
-                    kind = "para"
-                elif k == len(pieces) - 1:
-                    kind = "sentence"
-                else:
-                    kind = "clause"
-                segs.append(Segment(piece, kind))
+                end_of_sent = k == len(pieces) - 1
+                items.append((piece, end_of_sent, end_of_sent and si == len(sents) - 1))
+        for piece, sent_end, para_end in items:
+            if not _has_content(piece):
+                # 并入上一段：否则引擎会把它当成一个独立句子合成，并额外插入句间停顿
+                if not segs:
+                    continue
+                segs[-1].text += piece
+                if para_end:
+                    segs[-1].pause_after = "para"
+                elif sent_end and segs[-1].pause_after == "clause":
+                    segs[-1].pause_after = "sentence"
+                continue
+            segs.append(Segment(piece, "para" if para_end else ("sentence" if sent_end else "clause")))
     if segs:
         segs[-1].pause_after = "none"
     return segs
@@ -171,13 +196,20 @@ def trim_silence(x, sr, pad_ms=30):
     return x[max(0, i0 - pad): min(len(x), i1 + pad)]
 
 
-def level_to(x, target_db):
-    """段内响度对齐到 target_db（基于有声帧 RMS），增益限制在 ±12 dB。"""
+def voiced_rms_db(x):
+    """有声部分 RMS（dBFS）；整段无声时返回 None。"""
     v = x[_voiced(x)]
     if v.size == 0:
+        return None
+    return _db(np.sqrt(np.mean(v.astype(np.float64) ** 2)))
+
+
+def level_to(x, target_db):
+    """段内响度对齐到 target_db（基于有声帧 RMS），增益限制在 ±12 dB。"""
+    rms_db = voiced_rms_db(x)
+    if rms_db is None:
         return x
-    rms = np.sqrt(np.mean(v.astype(np.float64) ** 2))
-    gain = np.clip(10 ** (target_db / 20) / max(rms, 1e-9), 10 ** (-12 / 20), 10 ** (12 / 20))
+    gain = np.clip(10 ** ((target_db - rms_db) / 20), 10 ** (-12 / 20), 10 ** (12 / 20))
     return (x * gain).astype(np.float32)
 
 
@@ -224,8 +256,15 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
         x = level_to(x, target_db)
         x = fade(x, sr)
         dur = len(x) / sr
+        rms_db = voiced_rms_db(x)
+        if rms_db is None:
+            warnings.append(f"第 {i + 1} 段几乎无声（有声帧低于 -50 dBFS），未做响度对齐：{seg.text[:30]}")
+        elif abs(rms_db - target_db) > 1.0:
+            warnings.append(f"第 {i + 1} 段响度 {rms_db:.1f} dBFS 偏离目标 {target_db:.1f} dBFS"
+                            f"（已触发 ±12 dB 增益限制）：{seg.text[:30]}")
         seg_reports.append({"index": i, "text": seg.text, "seconds": round(dur, 3),
-                            "synth_seconds": round(dt, 3), "pause_after": seg.pause_after})
+                            "synth_seconds": round(dt, 3), "pause_after": seg.pause_after,
+                            "rms_dbfs": None if rms_db is None else round(rms_db, 2)})
         parts.append(x)
         gap = pauses.get(seg.pause_after, 0)
         if gap:
@@ -239,6 +278,10 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
         warnings.append(f"峰值 {_db(peak):.1f} dBFS 超过上限，已整体衰减到 {peak_db} dBFS")
 
     total = len(audio) / sr
+    rms_list = [s["rms_dbfs"] for s in seg_reports if s["rms_dbfs"] is not None]
+    rms_std = round(float(np.std(rms_list)), 3) if len(rms_list) > 1 else 0.0
+    if rms_std > 1.0:
+        warnings.append(f"段间响度标准差 {rms_std:.2f} dB 偏大（>1 dB），跨段一致性可能不足")
     report = {
         "engine": engine.name,
         "engine_info": engine.available()[1],
@@ -249,30 +292,58 @@ def synthesize_text(engine, text, *, normalize=True, max_chars=90, target_db=-20
         "segments": seg_reports,
         "segment_count": len(segs),
         "duration_seconds": round(total, 3),
+        "speech_seconds": round(sum(s["seconds"] for s in seg_reports), 3),
         "synth_seconds": round(t_total, 3),
         "rtf": round(t_total / total, 3) if total > 0 else None,
         "peak_dbfs": round(_db(float(np.max(np.abs(audio)))), 2),
+        # 段间一致性：各段对齐后的有声 RMS 与其标准差（客观代理，音色一致性仍需人工听评）
+        "segment_rms_std_db": rms_std,
+        "params": {"normalize": normalize, "max_chars": max_chars, "target_db": target_db,
+                   "pause_ms": pauses, "peak_limit_dbfs": peak_db,
+                   "lexicon_entries": len(lexicon) if lexicon else 0},
         "warnings": warnings,
     }
     return audio.astype(np.float32), sr, report
+
+
+SUPPORTED_FORMATS = ("wav", "flac", "ogg")
 
 
 def write_audio(path, audio, sr, fmt=None):
     import soundfile as sf
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    subtype = {"wav": "PCM_24", "flac": "PCM_16", "ogg": "VORBIS"}.get(
-        (fmt or path.suffix.lstrip(".")).lower())
+    ext = (fmt or path.suffix.lstrip(".")).lower()
+    subtype = {"wav": "PCM_24", "flac": "PCM_16", "ogg": "VORBIS"}.get(ext)
     if subtype is None:
-        raise ValueError(f"不支持的输出格式：{path.suffix}（支持 wav/flac/ogg）")
+        raise ValueError(f"不支持的输出格式：.{ext}（支持 {'/'.join(SUPPORTED_FORMATS)}；"
+                         f"MP3 需要额外编码器，本技能不支持）")
     sf.write(str(path), audio, sr, subtype=subtype)
     return path
+
+
+def sha256_file(path, chunk=1 << 20):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(chunk), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def model_provenance(path):
+    """模型可追溯信息：路径、大小、sha256。用于跨任务复现与许可核对。"""
+    p = Path(path)
+    if not p.is_file():
+        return {"path": str(p), "exists": False}
+    return {"path": str(p), "name": p.name, "bytes": p.stat().st_size,
+            "sha256": sha256_file(p), "exists": True}
 
 
 # ---------------------------------------------------------------- CLI
 
 def cmd_check(args):
-    info = {"python": sys.version.split()[0], "platform": platform.platform(), "engines": {}}
+    info = {"python": sys.version.split()[0], "platform": platform.platform(),
+            "skill_version": VERSION, "engines": {}}
     try:
         import soundfile as sf
         info["soundfile"] = sf.__libsndfile_version__
@@ -282,10 +353,25 @@ def cmd_check(args):
     try:
         e = build_engine(args)
         info["engines"][args.engine] = {"available": True, "info": e.available()[1]}
-    except EngineError as e:
-        info["engines"][args.engine] = {"available": False, "reason": str(e)}
+        if getattr(args, "model", None):
+            info["engines"][args.engine]["model"] = model_provenance(args.model)
+    except Exception as e:  # noqa: BLE001 - check 必须给出诊断而不是抛栈
+        info["engines"][args.engine] = {"available": False,
+                                        "reason": f"{type(e).__name__}: {e}"}
     print(json.dumps(info, ensure_ascii=False, indent=2))
     return 0 if all(v["available"] for v in info["engines"].values()) else 2
+
+
+def _validate_outputs(out, formats):
+    """提前校验输出路径，避免合成完成后才失败（长文本浪费一次完整合成）。"""
+    out = Path(out)
+    if out.suffix.lstrip(".").lower() not in SUPPORTED_FORMATS:
+        raise ValueError(f"母版必须是 WAV：不支持的输出格式 {out.suffix}"
+                         f"（支持 {'/'.join(SUPPORTED_FORMATS)}；MP3 需额外编码器，本技能不支持）")
+    for fmt in formats or []:
+        if fmt not in SUPPORTED_FORMATS:
+            raise ValueError(f"不支持的派生格式：{fmt}")
+    return out
 
 
 def cmd_synth(args):
@@ -297,10 +383,14 @@ def cmd_synth(args):
         print("错误：没有输入文本（--text 或 --input）", file=sys.stderr)
         return 1
     try:
+        out = _validate_outputs(args.out, args.format)
         engine = build_engine(args)
     except EngineError as e:
         print(f"引擎不可用：{e}", file=sys.stderr)
         return 2
+    except ValueError as e:
+        print(f"输出参数错误：{e}", file=sys.stderr)
+        return 4
     try:
         audio, sr, report = synthesize_text(
             engine, text, normalize=not args.no_normalize, max_chars=args.max_chars,
@@ -311,7 +401,16 @@ def cmd_synth(args):
     except EngineError as e:
         print(f"合成失败：{e}", file=sys.stderr)
         return 3
-    out = Path(args.out)
+    except ValueError as e:
+        print(f"输入文本无效：{e}", file=sys.stderr)
+        return 1
+    report["created"] = _dt.datetime.now().astimezone().isoformat(timespec="seconds")
+    report["skill_version"] = VERSION
+    report["model"] = model_provenance(getattr(args, "model", None))
+    report["lexicon"] = str(args.lexicon) if args.lexicon else None
+    report["engine_params"] = {"length_scale": args.length_scale, "noise_scale": args.noise_scale,
+                               "noise_w": args.noise_w, "speaker": args.speaker,
+                               "cuda": args.cuda}
     write_audio(out, audio, sr, "wav")  # 母版始终为 WAV
     derived = []
     for fmt in args.format or []:
@@ -319,9 +418,12 @@ def cmd_synth(args):
     report["output"] = str(out)
     report["derived"] = derived
     if args.report:
-        Path(args.report).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        rp = Path(args.report)
+        rp.parent.mkdir(parents=True, exist_ok=True)
+        rp.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({k: report[k] for k in
-                      ("output", "derived", "duration_seconds", "segment_count", "rtf", "warnings")},
+                      ("output", "derived", "duration_seconds", "segment_count", "rtf",
+                       "segment_rms_std_db", "warnings")},
                      ensure_ascii=False, indent=2))
     return 0
 

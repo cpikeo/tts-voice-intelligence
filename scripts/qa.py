@@ -5,7 +5,13 @@
 无静音区的爆点。可选 --asr：用 faster-whisper 回听识别，与规范化原文比较字符错误率（CER）。
 
 退出码：0 = 无 fail；1 = 存在 fail；2 = 文件无法读取。
-阈值为经验启发值，不是行业标准，可用 --profile 调整（见 references/quality.md）。
+阈值为经验启发值，不是行业标准；阈值依据、重复性与适用范围见 references/eval-results.md，
+可用 --profile 调整。
+
+回听指标分为三个互不混淆的量（详见 references/eval-results.md 第 2 节）：
+  asr_cer        整体 CER（回听文本的阿拉伯数字串会先读成中文再比对）
+  asr_cer_text   遮蔽数词后的 CER（只衡量非数字部分的发音，不受规范化链路影响）
+  asr_num_cer    仅数词部分的 CER（只能验证“听到的数字串”，不能验证朗读风格）
 """
 import argparse
 import json
@@ -16,7 +22,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from textnorm import load_lexicon, normalize_zh  # noqa: E402
+from textnorm import _MASK_NUM, load_lexicon, mask_numbers, normalize_zh  # noqa: E402
 
 FRAME_MS = 10
 
@@ -36,7 +42,7 @@ def load_mono(path):
     return x.mean(axis=1), sr, info
 
 
-def run_signal_checks(x, sr, info, expected_text=None):
+def run_signal_checks(x, sr, info):
     checks = []
     dur = len(x) / sr
     checks.append(_check("format", "pass" if sr >= 16000 else "warn",
@@ -58,11 +64,11 @@ def run_signal_checks(x, sr, info, expected_text=None):
     dc = float(abs(np.mean(x)))
     checks.append(_check("dc_offset", "warn" if dc > 0.01 else "pass", round(dc, 5)))
 
-    # 帧级分析（10 ms）
+    # 帧级分析（10 ms，向量化；长文本下逐帧 Python 循环会成为瓶颈）
     hop = int(sr * FRAME_MS / 1000)
     n = len(x) // hop
     frames = x[: n * hop].reshape(n, hop)
-    frame_db = np.array([_db(np.sqrt(np.mean(f.astype(np.float64) ** 2))) for f in frames])
+    frame_db = 20 * np.log10(np.sqrt(np.mean(frames.astype(np.float64) ** 2, axis=1)) + 1e-12)
     voiced = frame_db > -50
     if not voiced.any():
         checks.append(_check("speech_present", "fail", None, "整段音频近似静音"))
@@ -93,25 +99,21 @@ def run_signal_checks(x, sr, info, expected_text=None):
     # 静音区爆点：静音帧内出现的孤立尖峰
     # 候选：采样与前后邻点的偏离 > 0.1；仅当其 ±20 ms 邻域（排除自身 ±2 采样）整体低于 -40 dBFS 时才计为静音区爆点。
     # 注意：不能用“帧是否静音”做门限，因为爆点本身会把所在帧的能量抬高，导致永远判不出（已用注入爆点验证并修正）。
-    clicks = 0
     d2 = np.abs(x[1:-1] - 0.5 * (x[:-2] + x[2:]))
     cand = np.where(d2 > 0.1)[0] + 1
+    clicks = 0
     if cand.size:
         cs = np.concatenate([[0.0], np.cumsum(x.astype(np.float64) ** 2)])
         w = int(sr * 0.02)
-        thr = 10 ** (-40 / 20)
-        last = -10
-        for i in cand:
-            lo, hi = max(0, i - w), min(len(x), i + w + 1)
-            clo, chi = max(0, i - 2), min(len(x), i + 3)
-            n = (hi - lo) - (chi - clo)
-            if n <= 0:
-                continue
-            p = (cs[hi] - cs[lo]) - (cs[chi] - cs[clo])
-            if np.sqrt(max(p, 0.0) / n) < thr and i - last > 3:  # 相邻采样合并为同一事件
-                clicks += 1
-            if np.sqrt(max(p, 0.0) / n) < thr:
-                last = i
+        lo, hi = np.maximum(0, cand - w), np.minimum(len(x), cand + w + 1)
+        clo, chi = np.maximum(0, cand - 2), np.minimum(len(x), cand + 3)
+        cnt = (hi - lo) - (chi - clo)
+        power = (cs[hi] - cs[lo]) - (cs[chi] - cs[clo])
+        quiet = (cnt > 0) & (np.sqrt(np.maximum(power, 0.0) / np.maximum(cnt, 1))
+                             < 10 ** (-40 / 20))
+        cand = cand[quiet]
+        if cand.size:  # 相邻采样合并为同一事件
+            clicks = int(1 + np.sum(np.diff(cand) > 3))
     checks.append(_check("clicks_in_silence", "warn" if clicks > 0 else "pass", clicks, "静音区孤立尖峰数"))
     return checks
 
@@ -144,16 +146,29 @@ def _to_simplified(s):
     return OpenCC("t2s").convert(s)
 
 
+def reference_text(text, lexicon=None):
+    """朗读形式参考文本（规范化 + 词典 + 去标点）。
+
+    与 speech_rate 共用同一口径，避免两处字符数不一致。
+    """
+    return _PUNCT.sub("", normalize_zh(text, lexicon))
+
+
 def run_asr_check(path, expected_text, model_size, profile, lexicon=None):
+    def _skip(reason):
+        return [_check("asr_cer", "skip", None, reason)]
     try:
         from faster_whisper import WhisperModel
     except ImportError:
-        return [_check("asr_cer", "skip", None, "未安装 faster-whisper，跳过回听识别")]
+        return _skip("未安装 faster-whisper，跳过回听识别")
+    try:
+        from scipy.signal import resample_poly
+    except ImportError:
+        return _skip("未安装 scipy（回听需重采样到 16 kHz）：pip install scipy")
     if model_size not in _asr_models:  # 同进程内复用模型，避免批量验收时反复加载
         _asr_models[model_size] = WhisperModel(model_size, device="cpu", compute_type="int8")
     model = _asr_models[model_size]
     # 自行解码并重采样到 16 kHz，绕开 faster-whisper 对 PyAV 的版本耦合（不需要 ffmpeg）
-    from scipy.signal import resample_poly
     x, sr, _ = load_mono(path)
     if sr != 16000:
         from math import gcd
@@ -162,14 +177,33 @@ def run_asr_check(path, expected_text, model_size, profile, lexicon=None):
     segs, _ = model.transcribe(x, language="zh", beam_size=5, vad_filter=False,
                                initial_prompt="以下是普通话的句子。")  # 提示简体输出
     hyp_raw = "".join(s.text for s in segs)
-    ref = _PUNCT.sub("", normalize_zh(expected_text, lexicon))
-    hyp = _PUNCT.sub("", normalize_zh(_to_simplified(hyp_raw)))
-    cer = _cer(ref, hyp)
+    ref = reference_text(expected_text, lexicon)
+    # 回听文本只做繁转简 + 去标点；数字串保留 ASR 原样
+    hyp = _PUNCT.sub("", _to_simplified(hyp_raw))
+    # whisper 会把听到的中文数字写成阿拉伯数字，必须读回中文才能与朗读形式参考文本对齐；
+    # 这一步使 asr_cer 无法区分“读法对”与“数字串对”，故另给两个不受该影响的量。
+    hyp_canon = _PUNCT.sub("", normalize_zh(_to_simplified(hyp_raw)))
+    cer = _cer(ref, hyp_canon)
+    cer_text = _cer(mask_numbers(ref), mask_numbers(hyp))
+    ref_num = "".join(_MASK_NUM.findall(ref))
+    hyp_num = "".join(_MASK_NUM.findall(hyp_canon))
+    num_cer = _cer(ref_num, hyp_num) if ref_num else None
     status = "pass" if cer <= profile["cer_warn"] else ("warn" if cer <= profile["cer_fail"] else "fail")
-    return [_check("asr_cer", status, round(cer, 4),
-                   f"回听识别 CER（模型 {model_size}）；ASR 文本：{hyp_raw[:80]}")]
+    checks = [_check("asr_cer", status, round(cer, 4),
+                     f"回听识别 CER（模型 {model_size}）；ASR 文本：{hyp_raw[:80]}")]
+    # 以下两项为诊断量，不参与退出码判定
+    checks.append(_check("asr_cer_text", "info", round(cer_text, 4),
+                         "遮蔽数词后的 CER（衡量非数字部分的发音，不受规范化链路影响）"))
+    checks.append(_check("asr_num_cer", "info", None if num_cer is None else round(num_cer, 4),
+                         f"仅数词部分的 CER（参考数词 {len(ref_num)} 字；"
+                         f"只能验证听到的数字串，不能验证朗读风格）"))
+    return checks
 
 
+# 阈值依据：default 的 0.10/0.25 是在 9 条用例、2 个中文模型、whisper-small 回听下，
+# 与“人工可接受”粗略对齐后选定的经验值；实测单次运行的逐条波动可达 0.08
+# （见 references/eval-results.md 第 6 节），因此 strict 的 0.05 低于噪声水平，
+# 仅在多次重复取均值后使用。
 PROFILES = {
     "default": {"cer_warn": 0.10, "cer_fail": 0.25},
     "strict": {"cer_warn": 0.05, "cer_fail": 0.15},
@@ -183,7 +217,9 @@ def main(argv=None):
     p.add_argument("--text-file", help="期望朗读的原文文件")
     p.add_argument("--asr", metavar="MODEL", help="启用回听识别，如 base / small（需 faster-whisper）")
     p.add_argument("--lexicon", help="与合成时相同的发音词典，使参考文本与朗读形式一致")
-    p.add_argument("--profile", choices=list(PROFILES), default="default")
+    p.add_argument("--profile", choices=list(PROFILES), default="default",
+                   help="default: warn 0.10 / fail 0.25；strict: 0.05 / 0.15（低于单次运行噪声，"
+                        "需多次重复取均值后使用）")
     p.add_argument("--report", help="JSON 报告输出路径")
     args = p.parse_args(argv)
 
@@ -200,10 +236,10 @@ def main(argv=None):
     expected = args.text
     if args.text_file:
         expected = Path(args.text_file).read_text(encoding="utf-8")
-    checks = run_signal_checks(x, sr, info, expected)
+    checks = run_signal_checks(x, sr, info)
 
     if expected:
-        ref_chars = len(_PUNCT.sub("", normalize_zh(expected)))
+        ref_chars = len(reference_text(expected, load_lexicon(args.lexicon) if args.lexicon else None))
         rate = ref_chars / (len(x) / sr)
         checks.append(_check("speech_rate_chars_per_s", "pass" if 1.5 <= rate <= 8 else "warn",
                              round(rate, 2), f"规范化后字符数 {ref_chars}；合理范围约 1.5–8 字/秒"))
@@ -217,7 +253,9 @@ def main(argv=None):
     report = {"file": str(path), "ok": not fails, "profile": args.profile, "checks": checks}
     text = json.dumps(report, ensure_ascii=False, indent=2)
     if args.report:
-        Path(args.report).write_text(text, encoding="utf-8")
+        rp = Path(args.report)
+        rp.parent.mkdir(parents=True, exist_ok=True)
+        rp.write_text(text, encoding="utf-8")
     print(text)
     return 1 if fails else 0
 

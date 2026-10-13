@@ -41,6 +41,19 @@ def test_segment_pause_kinds_and_split():
     assert [s.pause_after for s in segs] == ["sentence", "para", "none"]
 
 
+def test_punctuation_only_fragment_is_not_a_segment():
+    """回归：此前“！”/“…”会单独成段被引擎合成，并额外插入句间停顿。"""
+    segs = tts.segment("真的吗？！接下来。", max_chars=90)
+    assert [s.text for s in segs] == ["真的吗？！", "接下来。"]
+    segs = tts.segment("请稍等……然后再试一次。", max_chars=90)
+    assert [s.text for s in segs] == ["请稍等……", "然后再试一次。"]
+
+
+def test_punctuation_only_input_is_dropped_not_crashed():
+    with pytest.raises(ValueError):
+        tts.synthesize_text(ToneEngine(), "！！！")
+
+
 def test_long_sentence_clause_pauses():
     segs = tts.segment("甲甲甲甲，乙乙乙乙，丙丙丙丙。", max_chars=6)
     assert [s.text for s in segs] == ["甲甲甲甲，", "乙乙乙乙，", "丙丙丙丙。"]
@@ -178,3 +191,95 @@ def test_qa_detects_injected_click_in_silence():
 def test_qa_no_click_on_clean_tone():
     t = np.arange(SR * 2) / SR
     assert _clicks((0.1 * np.sin(2 * np.pi * 220 * t)).astype(np.float32)) == 0
+
+
+def test_model_provenance(tmp_path):
+    p = tmp_path / "m.onnx"
+    p.write_bytes(b"abc")
+    info = tts.model_provenance(p)
+    assert info["exists"] and info["bytes"] == 3 and len(info["sha256"]) == 64
+    assert tts.model_provenance(tmp_path / "nope.onnx")["exists"] is False
+
+
+def test_cli_rejects_unsupported_output_format(tmp_path):
+    """回归：此前 .mp3 输出会抛出未捕获异常而不是给出可诊断的退出码。"""
+    assert tts.main(["synth", "--model", str(tmp_path / "x.onnx"), "--text", "测试",
+                     "--out", str(tmp_path / "a.mp3")]) == 4
+
+
+def test_cli_engine_unavailable_returns_2(tmp_path):
+    assert tts.main(["synth", "--model", str(tmp_path / "x.onnx"), "--text", "测试",
+                     "--out", str(tmp_path / "a.wav")]) == 2
+
+
+def test_cli_empty_text_returns_1(tmp_path):
+    assert tts.main(["synth", "--model", str(tmp_path / "x.onnx"),
+                     "--out", str(tmp_path / "a.wav")]) == 1
+
+
+def test_check_reports_unavailable_instead_of_traceback(tmp_path, capsys):
+    assert tts.main(["check", "--model", str(tmp_path / "x.onnx")]) == 2
+    data = json.loads(capsys.readouterr().out)
+    assert data["engines"]["piper"]["available"] is False
+    assert data["engines"]["piper"]["reason"]
+
+
+def test_qa_creates_missing_report_dir(tmp_path):
+    x = np.zeros(SR, dtype=np.float32)
+    p = _write(tmp_path, x)
+    assert qa.main([str(p), "--report", str(tmp_path / "deep" / "r.json")]) in (0, 1)
+    assert (tmp_path / "deep" / "r.json").is_file()
+
+
+def test_segment_loudness_consistency_is_measured():
+    """level_to 把每段对齐到同一 RMS，因此段间标准差应接近 0（客观一致性代理）。"""
+    class VarEngine(ToneEngine):
+        def synthesize(self, text):
+            self.calls.append(text)
+            n = int(SR * 0.2 * max(1, len(text)))
+            amp = 0.3 if len(self.calls) % 2 else 0.05
+            t = np.arange(n) / SR
+            return (amp * np.sin(2 * np.pi * 220 * t)).astype(np.float32)
+
+    _, _, rep = tts.synthesize_text(VarEngine(), "第一句话。这是第二句话，稍微长一些。", target_db=-20)
+    assert all("rms_dbfs" in s for s in rep["segments"])
+    assert rep["segment_rms_std_db"] < 1.0
+    assert rep["speech_seconds"] < rep["duration_seconds"]  # 停顿计入成品时长
+
+
+def test_loudness_clamp_is_warned():
+    """增益超出 ±12 dB 限制时必须在报告里说明，而不是静默偏差。"""
+    class QuietEngine(ToneEngine):
+        def synthesize(self, text):
+            self.calls.append(text)
+            n = int(SR * 0.2 * max(1, len(text)))
+            t = np.arange(n) / SR
+            return (0.01 * np.sin(2 * np.pi * 220 * t)).astype(np.float32)
+
+    _, _, rep = tts.synthesize_text(QuietEngine(), "很轻的一段话。", target_db=-20)
+    assert any("偏离目标" in w for w in rep["warnings"])
+
+
+def test_near_silent_segment_is_warned():
+    class SilentEngine(ToneEngine):
+        def synthesize(self, text):
+            self.calls.append(text)
+            n = int(SR * 0.2 * max(1, len(text)))
+            t = np.arange(n) / SR
+            return (0.00001 * np.sin(2 * np.pi * 220 * t)).astype(np.float32)
+
+    _, _, rep = tts.synthesize_text(SilentEngine(), "极轻的一段话。", target_db=-20)
+    assert any("几乎无声" in w for w in rep["warnings"])
+
+
+def test_qa_counts_multiple_clicks_separately():
+    x = np.zeros(SR * 3, dtype=np.float32)
+    for pos in (SR // 2, SR, SR + SR // 2, SR * 2):  # 相隔很远，应为 4 次独立事件
+        x[pos] = 0.5
+    assert _clicks(x) == 4
+
+
+def test_qa_merges_adjacent_click_samples():
+    x = np.zeros(SR * 2, dtype=np.float32)
+    x[SR: SR + 3] = 0.5  # 相邻采样：1 次事件
+    assert _clicks(x) == 1

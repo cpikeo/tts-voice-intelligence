@@ -70,9 +70,22 @@ pip install faster-whisper scipy opencc-python-reimplemented
 | `--speaker` | None | 多说话人模型的说话人 id | 单说话人模型无需设置 |
 | `--cuda` | 关 | GPU 推理 | 需要 onnxruntime-gpu；**本环境无 GPU，未测试** |
 
+`tts.py check` 会额外输出模型路径、大小与 sha256，用于跨任务复现与许可核对。
+
 **随机性与复现（已验证）**：Piper 的采样噪声位于 ONNX 图内部，Python 层无法固定种子。默认参数下，同一文本三次合成的音频字节哈希各不相同、时长相差约 ±1.7%。若需要逐字节可复现（如回归测试、A/B 对比），使用 `--noise-scale 0 --noise-w 0`：实测三次输出完全一致，但韵律可能变平，**其听感未经人工评估，不建议直接作为成品默认值**。
 
-运行资源（实测，2 vCPU，无 GPU）：RTF 约 0.07–0.14（合成耗时 / 音频时长）；单进程内存未单独测量。首次调用会加载模型与 g2pW，耗时更长（实测一次 RTF 1.26，属冷启动）。
+运行资源（实测，2 vCPU / 2 GB，无 GPU）：RTF 约 0.06–0.15（合成耗时 / 成品音频时长）。首次调用会加载模型与 g2pW，耗时更长（实测一次 RTF 1.26–1.46，属冷启动）。
+
+内存（实测，同一环境）：
+
+| 场景 | 峰值 RSS | 说明 |
+|---|---|---|
+| huayan 合成 972 字（36 段，成品 187 s） | 551 MB | 含模型与全部音频驻留内存 |
+| huayan + whisper-small 回听 | 约 1.0 GB | 顺序执行，可接受 |
+| xiao_ya（g2pW 前端）+ whisper-small **同时**驻留 | **被 OOM 杀掉（exit 137）** | 2 GB 环境不够 |
+
+因此 `tests/run_eval.py` 采用两阶段：先合成全部并落盘，再 `del engine` 释放引擎后才加载 whisper 回听。
+若你的环境内存同样紧张，用 `--asr base`（约 142 MB）替代 `small`（约 464 MB）。
 
 ## 5. 新增引擎适配器（约定）
 
