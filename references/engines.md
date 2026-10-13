@@ -53,8 +53,8 @@ pip install faster-whisper scipy opencc-python-reimplemented
 
 | 模型 | 采样率 | 模型数据许可（以模型卡为准） | 实测结论（见 eval-results.md） |
 |---|---|---|---|
-| `zh_CN-huayan-medium` | 22050 Hz | 模型卡标注 dataset License: **Unknown** | 可用；中文 CER 明显高于 xiao_ya；英文/专名差 |
-| `zh_CN-xiao_ya-medium` | 22050 Hz | 模型卡标注 **Non-commercial use**（BZNSYP 数据集） | 中文 CER 显著更低；需额外依赖 |
+| `zh_CN-huayan-medium` | 22050 Hz | 模型卡标注 dataset License: **Unknown** | 可用；中文 CER 明显高于 xiao_ya（0.153 vs 0.044）；英文/专名差。依赖最少 |
+| `zh_CN-xiao_ya-medium` | 22050 Hz | 模型卡标注 **Non-commercial use**（BZNSYP 数据集） | **优先选择**：中文 CER 显著更低（0.044）；已有 1 名听者在有效盲听 A/B 中偏好它（主观与客观方向一致）。需 g2pW 前端依赖，更慢、更占内存 |
 
 **许可结论**：两个中文模型的数据许可都**不适合直接用于商业交付**，且 huayan 许可不明。使用前必须让用户确认授权，并在交付说明中写明。本 Skill 不内置、不分发任何模型权重。
 

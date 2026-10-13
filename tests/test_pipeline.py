@@ -124,8 +124,14 @@ def test_write_formats(tmp_path):
 
 
 def test_missing_piper_model_gives_diagnosable_error(tmp_path):
-    with pytest.raises(tts.EngineError, match="找不到 Piper 模型"):
+    """必须给出可诊断的 EngineError。
+
+    两种环境都得通过：装了 piper 但模型不存在 -> “找不到 Piper 模型”；
+    没装 piper -> “未安装 piper-tts”。只匹配前一种会让干净 CI 误报失败。
+    """
+    with pytest.raises(tts.EngineError, match="找不到 Piper 模型|未安装 piper-tts") as ei:
         tts.PiperEngine(model=tmp_path / "none.onnx")
+    assert str(ei.value)
 
 
 # ---------------- QA

@@ -48,6 +48,10 @@ python scripts/tts.py check --model MODEL.onnx
 - `engines.piper.available` 为 `true`：继续。
 - 为 `false`：如实报告 `engines.piper.reason`，并依据 `references/engines.md` 给出安装或获取模型的步骤。**不得在引擎不可用时生成音频、不得编造合成结果或指标。**
 - 模型许可必须确认。`zh_CN-huayan-medium` 的数据许可为 Unknown，`zh_CN-xiao_ya-medium` 为非商用。若用户的用途是商业交付，且未确认授权，应先询问用户，不要默默使用。
+- 同为中文时**优先 `xiao_ya`**：回听 CER 明显更低（0.044 vs 0.153，见 `references/eval-results.md`），
+  且已有 1 名听者在**有效盲听 A/B**中偏好它（听匿名样本、评分前未揭示对应关系）。
+  代价是它需 g2pW 前端依赖、更慢（RTF 约 0.09 vs 0.07）、内存占用更高（1.3 GB vs 0.5 GB），
+  且**它是非商用许可**——商用交付两者都需先确认授权，不能因为音质好就默认可用。
 
 ### 4. 文本规范化
 
