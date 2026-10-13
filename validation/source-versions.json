@@ -1,41 +1,38 @@
 {
   "final_source_sha256": {
-    "scripts/blindtest.py": "1ce327a084b55fb1617ca57ead3cb132bfd061f32c9c7af9a24ea466b92875fa",
-    "scripts/engines.py": "f9bcd0ec6d3d42fe662512755794784e89375b943a8c358eeea688ecd828bbe9",
-    "scripts/qa.py": "a21cf392772172de2b9d5e2fdf15a99d545abf644a980cd598f8ad18ee4ef935",
-    "scripts/textnorm.py": "15ad3f6737fdf31c587b98f2ea86e0a913e236851407777ca5407d1b1a4b74ae",
-    "scripts/tts.py": "22bddc248cdc70539f83dab64cea8d0524500390d01aed99a2ab97e58b040bde"
+    "scripts/blindtest.py": "129a0ee704c762f28aef59eb8b039ae286e6f598571097fb33b3421fb9449fb4",
+    "scripts/engines.py": "07e340f61d6db77bd297aadee7199c2e5b11e48be9b99bfdb8cd97b6fd4c60e2",
+    "scripts/qa.py": "19c2e4a611c05f40c685fa9b0a90e772c812b93047b793a21816f7d1e4628272",
+    "scripts/textnorm.py": "37944582a8787fbe39306f6797a885810353fd574bad7e7a241354be671178fa",
+    "scripts/tts.py": "eb3748fbcaae8db3a04fa1ef9142022a0a85a37a3c656beb2324d3271fcdc396",
+    "tests/cases.jsonl": "266e60ef8504c64b1f141204e33a94e15dd1ba7d0b669a9dc2186ceeb215501c",
+    "tests/run_eval.py": "6df5f9b0ad61dd3b7eae313f8b32c69aa8688de6d5ed6994cb28c627c853a260"
   },
   "objective_runs": {
     "validation/espeak-de/summary.json": {
-      "differs_from_final": [
-        "scripts/qa.py"
-      ],
-      "note": "QA help removed historical noise claim and stale prompt comment AFTER numeric runs; no numerical path changed. Original run hashes retained."
+      "differs_from_final": [],
+      "exact_match": true,
+      "note": "All objective runs were executed with the exact final script and case versions; zero post-run source drift."
     },
     "validation/espeak-en-GB/summary.json": {
-      "differs_from_final": [
-        "scripts/qa.py"
-      ],
-      "note": "QA help removed historical noise claim and stale prompt comment AFTER numeric runs; no numerical path changed. Original run hashes retained."
+      "differs_from_final": [],
+      "exact_match": true,
+      "note": "All objective runs were executed with the exact final script and case versions; zero post-run source drift."
     },
     "validation/espeak-en-us/summary.json": {
-      "differs_from_final": [
-        "scripts/qa.py"
-      ],
-      "note": "QA help removed historical noise claim and stale prompt comment AFTER numeric runs; no numerical path changed. Original run hashes retained."
+      "differs_from_final": [],
+      "exact_match": true,
+      "note": "All objective runs were executed with the exact final script and case versions; zero post-run source drift."
     },
     "validation/espeak-ja/summary.json": {
-      "differs_from_final": [
-        "scripts/qa.py"
-      ],
-      "note": "QA help removed historical noise claim and stale prompt comment AFTER numeric runs; no numerical path changed. Original run hashes retained."
+      "differs_from_final": [],
+      "exact_match": true,
+      "note": "All objective runs were executed with the exact final script and case versions; zero post-run source drift."
     },
     "validation/piper-repeat/summary.json": {
-      "differs_from_final": [
-        "scripts/qa.py"
-      ],
-      "note": "QA help removed historical noise claim and stale prompt comment AFTER numeric runs; no numerical path changed. Original run hashes retained."
+      "differs_from_final": [],
+      "exact_match": true,
+      "note": "All objective runs were executed with the exact final script and case versions; zero post-run source drift."
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "synth_exit": 0,
-  "wall_seconds": 25.764784399000064,
-  "peak_rss_mb": 406.0546875,
-  "qa_exit": 0
+  "wall_seconds": 23.225,
+  "peak_rss_mb": 338.988,
+  "qa_exit": 1
 }

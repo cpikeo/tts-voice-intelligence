@@ -1,33 +1,34 @@
 {
-  "method": "Unicode character counts, not tokenizer counts; documents read on demand",
+  "method": "Unicode character counts for context docs; line counts for scripts and tests",
   "baseline_context_chars": 19560,
-  "current_context_chars": 13210,
-  "reduction_percent": 32.5,
+  "current_context_chars": 15135,
+  "reduction_percent": 22.6,
   "files": {
     "README.md": {
       "before": 1919,
-      "after": 2913
+      "after": 2991
     },
     "SKILL.md": {
       "before": 5903,
-      "after": 3767
+      "after": 3933
     },
     "references/engines.md": {
       "before": 4252,
-      "after": 2954
+      "after": 2262
     },
     "references/eval-results.md": {
       "before": 4868,
-      "after": 2251
+      "after": 3678
     },
     "references/voice-direction.md": {
       "before": 2618,
-      "after": 1325
+      "after": 2271
     }
   },
   "execution_lines": {
-    "before": 1118,
-    "after": 1552,
-    "change_percent": 38.8
+    "baseline_132d5f9": 1118,
+    "prior_14e09dc": 1552,
+    "current": 2469,
+    "test_lines": 1438
   }
 }

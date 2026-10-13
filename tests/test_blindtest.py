@@ -93,3 +93,61 @@ def test_unblind_reveals_mapping(tmp_path, capsys):
     assert "system_" in table  # 评完才揭示
     for i in range(3):
         assert f"system_{i}.wav" in table
+    assert (pkg / "unblinded.json").is_file()
+
+
+def test_isolated_blindtest_workflow_and_tamper_guard(tmp_path, capsys):
+    src = tmp_path / "src"
+    src.mkdir()
+    files = []
+    for i in range(3):
+        p = src / f"secret_engine_{i}.wav"
+        tts.write_audio(p, (0.1 * np.sin(np.arange(SR) / (i + 3))).astype(np.float32), SR)
+        files.append(str(p))
+    pkg = tmp_path / "public_pkg"
+    ratings_dir = tmp_path / "rater_workspace"
+    private_map = tmp_path / "private" / "blind_map.json"
+
+    # Reject map-file inside pkg when isolating
+    with pytest.raises(SystemExit, match="不能位于试听包"):
+        blindtest.main(["prepare", "--audio", *files, "--out", str(pkg),
+                        "--map-file", str(pkg / "blind_map.json"), "--isolate"])
+
+    blindtest.main(["prepare", "--audio", *files, "--out", str(pkg),
+                    "--ratings-dir", str(ratings_dir), "--map-file", str(private_map),
+                    "--isolate", "--seed", "11"])
+    assert not (pkg / "blind_map.json").exists()
+    assert not (ratings_dir / "blind_map.json").exists()
+    assert private_map.is_file()
+    manifest = json.loads((pkg / "listen" / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["samples"] == 3
+    assert all(it["playable"] and "source" not in it for it in manifest["items"])
+
+    # Score works using listen/manifest.json WITHOUT access to private/blind_map.json
+    sheet = ratings_dir / "ratings.csv"
+    rows = list(csv.reader(sheet.read_text(encoding="utf-8").splitlines()))
+    header, body = rows[0], rows[1:]
+    for idx, row in enumerate(body):
+        row[1:7] = [str((idx % 5) + 1)] * 6
+        row[7] = f"note-{idx}"
+    sheet.write_text("\n".join(",".join(r) for r in [header] + body) + "\n", encoding="utf-8")
+
+    blindtest.main(["score", "--pkg", str(pkg), "--ratings-dir", str(ratings_dir)])
+    assert (ratings_dir / "scores.json").is_file()
+    capsys.readouterr()
+
+    # Unblind with isolated map-file succeeds and writes unblinded.json
+    out_unblind = ratings_dir / "unblinded.json"
+    blindtest.main(["unblind", "--pkg", str(pkg), "--ratings-dir", str(ratings_dir),
+                    "--map-file", str(private_map), "--out", str(out_unblind)])
+    table = capsys.readouterr().out
+    assert "secret_engine_0.wav" in table
+    unblinded_data = json.loads(out_unblind.read_text(encoding="utf-8"))
+    assert len(unblinded_data["items"]) == 3
+
+    # Tampering with a listen audio file blocks unblinding
+    (pkg / "listen" / "A.wav").write_bytes(b"corrupted")
+    with pytest.raises(SystemExit, match="篡改|不符"):
+        blindtest.main(["unblind", "--pkg", str(pkg), "--ratings-dir", str(ratings_dir),
+                        "--map-file", str(private_map)])
+

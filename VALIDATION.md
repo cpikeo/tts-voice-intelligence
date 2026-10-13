@@ -1,98 +1,80 @@
 # 全仓实施与验证交付报告
 
-**结论：已完成本地代码、Skill、参考资料与评测工具的实际修改和验证；尚不能认定“专业级听感与授权克隆终验完成”。** 无有效授权录音/XTTS模型、无真实人评，不能补写为成功。未推送 GitHub，交付的是本地修改仓库、补丁与证据。
+**结论：已完成按优先级的全部代码修复、安全门禁强化、真实多引擎合成、7 类中文重点场景重复 ASR 评测及隔离盲测工作流验证；因缺少真实人类评员主观打分与合法授权的本地 XTTS 声纹/权重资产，“主观听感认证”与“真实授权克隆音色保持”两项维持显式未完成（`not_performed` / `skipped`），不作虚假宣称。**
 
-## 1. 基线与范围
+## 1. 基线与审计范围
 
-基于指定仓库 commit `132d5f938fb0f7797eb4280a7d3047665f3b1500`，审读全部18个原始文件与调用路径；实施前清单见 AUDIT.md。版本0.2.0→0.3.0。基线76 passed / 8 skipped。
-本次环境 Python3.13.16、约1982MiB可见内存、CPU配额未暴露，未验证GPU。软件及ASR资产哈希见 validation/environment.json；无模型权重打包/提交，技术测试使用 huayan 模型卡数据许可 Unknown，不授权商业用途。
+- **远端基线**：`https://github.com/cpikeo/tts-voice-intelligence.git` @ `14e09dcadccfdd5ab9212b93d96d6f395a7423f4`（前序基线 `132d5f938fb0f7797eb4280a7d3047665f3b1500`）。
+- **版本升级**：`0.3.0` → `0.4.0`。
+- **修复的核心基线缺陷**（详见 [AUDIT.md](AUDIT.md)）：
+  1. **证据与 Git 状态不一致**：`14e09dc` 中 `.gitignore` 忽略了 `validation/**/*.wav`，导致 `artifact-manifest.json` 声称存在的 48 个音频在仓库中全部缺失，同时 `validation/listening-unrated/blind_map.json` 被公开提交至 Git，且 `scripts/qa.py` 在评测运行后被修改造成 `source-versions.json` 哈希漂移。
+  2. **盲测未隔离**：原 `blindtest.py` 将 `blind_map.json` 默认写入试听包同目录，且 `score` 强依赖读取 `blind_map.json`。
+  3. **真实质量覆盖不足与文本规范化漏洞**：原 Piper 重复评测仅跑 3 用例，漏测普通中文、专名、多音字、长段及长文本全文 ASR；`normalize_zh` 全角转半角顺序晚于词典匹配、未校验 `YYYY年MM月DD日` 日历合法性、前导零编号 `001024` 丢失前导零。
+  4. **声音导演闭环缺失**：原 `direction` 缺少 `context`（语境）、`audible_change`（可听变化）、`pause_after_ms`（逐段边界停顿）及合成报告 `direction_validation` / QA `direction_execution` 自动验证与不支持能力结构化标注。
+  5. **生产可靠性与安全缺口**：原实现缺少引擎硬超时、异常取消清理、整组交付原子事务与回滚、分段断点恢复（`--checkpoint-dir`）、参考音频单次读取防 TOCTOU 与加载前后哈希绑定、授权 HMAC-SHA256 签名验真及不可信模型静态拦截/子进程隔离（`--isolate-model`）。
 
-## 2. 实際改动
+## 2. 按优先级的实施与变更清单
 
-| 范畴 | 完成项 | 仍有边界 |
-|---|---|---|
-| 架构 | SKILL唯一决策；提取 engines.py 薄适配层，旧Piper/Python导出和CLI命令保留；实例能力声明 | 不是任意参数均支持的万能接口 |
-| 声音导演 | 意图/人物/听众/语义节拍决策；direction文本绑定与逐段语速真实执行、理由记录 | 由agent/人判断语义；无自动情绪/重音模型；无跨段隐状态 |
-| 多语言 | locale能力约束、明确地区拒绝、中文与其他语言分离、外文词界分段、语言感知ASR | 识别仅脚本启发式；外语数字交引擎前端；混合语言/专名仍弱 |
-| 授权克隆 | 本地XTTS API调用；先授权后加载，用途/有效期/撤销、人工参考确认、参考/模型哈希绑定、语言授权；逐段重查 | 只做真实API契约替身测试；尚无真实克隆证据；JSON声明不是法律认证 |
-| 音频 | 默认最小处理，显式legacy兼容；异常输出拒绝、必要整体衰减、每音频文件原子写入 | 全量驻留；无LUFS/主观自然度认证；整组输出非事务 |
-| 指标 | 活动帧秒修正字符速度；另给含静音成品速度；段音频秒单列；最终RMS测量统一口径 | 活动帧不是语音VAD；RMS不是感知响度/音色 |
-| 可靠性 | max_chars死循环修复；NaN/空/多声道/越界/日期/时刻校验；输出不覆盖输入/隐式配置；失败报告；有界重试/长度 | Piper/XTTS无硬超时隔离，无断点续合成 |
-| 评测 | 9→19个用例，真实locale/克隆能力过滤，3重复随机手臂，保存原始ASR/信号/错误/哈希，skip不崩溃 | 规模有限，部分新增场景仅入集未真实执行 |
-| 盲听 | 独立匿名顺序、去容器元数据、映射操作者保管、未知/重复标签拒绝、缺失维度不写0、未完整不揭盲 | 仍需真实评员、权限隔离与播放协议；不会自动打分 |
+| 优先级与模块 | 修改文件 | 具体实施内容 | 验证方式 |
+|---|---|---|---|
+| **1. 证据与盲测** | `.gitignore`、`scripts/blindtest.py`、`validation/reproduce.sh` | 豁免 `!validation/**/*.wav` 并忽略 `**/blind_map.json`；`blindtest.py` 新增 `--isolate`、`--map-file`、`--ratings-dir`，将试听音频（`listen/`）、评分表（`ratings/`）与私有映射（`private/listening-blind-map.json`，`0600`）物理隔离；`prepare` 自动解码核验每个试听音频可播性与源文件名零残留并生成匿名 `listen/manifest.json`；`score` 无需映射即可汇总；`unblind` 校验全量评分完整性与试听音频哈希防篡改后生成 `unblinded.json` | `tests/test_blindtest.py`、`validation/blindtest-workflow-check.json` |
+| **2. 真实质量与规范化** | `scripts/textnorm.py`、`tests/run_eval.py`、`tests/test_textnorm.py` | 全角字母数字转半角提前至词典匹配前（修复 `ＧＰＵ` 匹配）；新增 `YYYY年MM月DD日/号` 与 `MM月DD日/号` 合法日历校验；前导零编号（`0\d+` 如 `001024`）按逐位数字读法保留前导零；`run_eval.py` 汇总 `cer`、`cer_text`、`num_cer`；真实执行 Piper 7 类中文核心场景 × 2 手臂 × 3 重复 + 长文本全文 ASR | `tests/test_textnorm.py`、`validation/piper-repeat/summary.json`、`validation/long-qa.json` |
+| **3. 声音导演** | `scripts/tts.py`、`scripts/qa.py`、`assets/direction.example.json` | 扩展 `direction` 契约支持 `context`、`audible_goal`、beat `audible_change` 与 `pause_after_ms`（0–5000ms）；严格拒绝 `emotion`/`emphasis`/`timbre` 等未实现控制；合成报告输出 `direction_validation`（含每段实测 `active_seconds`、`speech_rate_chars_per_s`、`pause_after_ms` 及 `unsupported_or_unverified` 显式标记）；`qa.py` 新增 `direction_execution` 检查项 | `tests/test_intelligence.py`、`validation/direction.json`、`validation/direction-qa.json` |
+| **4. 生产可靠性与安全** | `scripts/engines.py`、`scripts/tts.py`、`tests/test_intelligence.py` | ① `run_with_timeout` 与 `EngineTimeoutError` 实现默认 60s 硬超时，eSpeak 使用 `start_new_session` + `killpg` 清理进程组，超时与 `cancel_event` 取消绝不重试；② `transactional_write_bundle` 实现母版 WAV + 派生 FLAC/OGG + 报告整组暂存、哈希校验与失败全量回滚；③ `--checkpoint-dir` 实现按 `plan_sha256` 校验的分段断点保存与失败恢复；④ `_read_and_fingerprint` + `verify_bound_asset` 消除参考音频 TOCTOU 并绑定模型加载前后哈希；⑤ `sign_authorization` / `validate_authorization` 支持 HMAC-SHA256 授权签名核验并拦截模板占位符；⑥ `inspect_model_safety` 静态拦截恶意 pickle 全局调用、ZIP Slip、配置路径穿越及 ONNX 外部路径穿越，支持 `--isolate-model` 离线子进程隔离 | `tests/test_intelligence.py`（新增 8 组专项验收测试） |
+| **5. 可维护性** | `SKILL.md`、`README.md`、`references/*.md` | `SKILL.md` 保持唯一决策基准（3933 字符，较初始基线 5903 字符精简 33.4%）；五篇核心文档总计 15135 字符（较初始基线 19560 字符减少 22.6%）；所有安全门禁、测试与证据完整保留 | `validation/complexity.json` |
 
-## 3. 删除、合并与保留依据
+## 3. 测试与真实评测证据区分
 
-- 删除无原始证据的模型排名、相互矛盾的“有效盲听偏好”、通用CER噪声/显著性界限、机械场景参数表、重复文本规则和重复脚本长说明。
-- 合并引擎接口/能力在单一适配层，语言规范化复用同一入口；报告与QA用相同活动帧口径。QA直接用本次合成的朗读文本，并校验音频哈希，避免参考错位。
-- 保留原Piper真实实现、分段逻辑、词典、标准格式、失败重试、信号/ASR/盲听工具与原全部测试：这些是可验证资产，不为比例删掉。
-- 由文档Unicode字符数计（非token）：README+SKILL+三参考文档 **19560→13210，减少32.5%**；SKILL **5903→3767，减少36.2%**。审计与原始证据不放入每次Skill核心Context；references按需读取。
-- 执行脚本 **1118→1552行，增加38.8%**：新薄引擎、授权/异常/碰撞/报告校验是主要原因。**没有达到净删20%代码，也未证明“调用减少30%质量不降”**。默认处理已去掉逐段对齐/裁剪/淡变/附加静音；是否听感更好仍待盲听，不把减少操作等同音质提升。
-- 不删重复评测/安全门禁/报告溯源来制造简化比例。计数方式和逐文件值见 validation/complexity.json。
+| 证据类别 | 执行命令 / 产物位置 | 实测结果 | 边界说明 |
+|---|---|---|---|
+| **回归与安全契约测试（含测试替身）** | `python -m pytest -q`（`validation/pytest-no-piper.log`） | **150 passed, 9 skipped**（0.93s） | 无 Piper 模型时自动跳过 8 项 Piper 与 1 项 XTTS；验证规范化、分段、硬超时、取消、事务回滚、断点恢复、HMAC 验签、恶意 pickle/ZIP 拦截、盲测隔离与 FakeAPI 契约 |
+| **真实引擎集成测试（Piper + eSpeak）** | `TTS_PIPER_MODEL=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx python -m pytest -q`（`validation/pytest-full.log`） | **158 passed, 1 skipped**（29.74s） | Piper 8 项真实中文集成与 eSpeak 中/英/德/日及声音导演真实集成全部通过；唯一 skip 为 `test_real_authorized_clone_cross_text`（缺真实 XTTS 资产） |
+| **真实中文 7 类场景重复合成 + ASR 诊断** | `validation/piper-repeat/`（42 个真实 `.wav` + `summary.json` + `runs.json`） | 42 个音频信号层 **0 fail / 0 warn**；`whisper-base` 诊断层 **15 pass / 14 warn / 13 fail** | 覆盖 `zh_plain`、`digits_date`、`mixed_en`、`proper`、`polyphone`、`zh_emotional_turn`、`zh_long`；`source-versions.json` 确认源码零漂移 |
+| **真实多语言 eSpeak 重复评测** | `validation/espeak-en-us/`、`espeak-en-GB/`、`espeak-de/`、`espeak-ja/`（24 个真实 `.wav`） | 24 个音频信号层 **0 fail / 0 warn**；`en-US` 6 次 ASR CER 均 `0.125`（warn） | 外语保留数字交引擎前端；`en-GB`/`de`/`ja` 仅做信号验收，未做 ASR 或人评 |
+| **真实长文本连续性与 ASR 诊断** | `validation/long.wav`、`long.json`、`long-qa.json`、`long-resources.json` | 1072 字符、64 段、201.805s（有效信号 177.766s），RTF 0.105，wall 23.225s，峰值 RSS 338.988 MiB；信号 0 fail/0 warn，全文 ASR CER `0.2775` | 段间活动 RMS 标准差 1.043 dB（minimal 模式保留自然动态）；长音频同音字累积使 `whisper-base` CER 超出 0.25 工程阈值 |
+| **真实声音导演执行与 QA 核验** | `validation/direction.wav`、`direction.json`、`direction-qa.json` | 退出码 0，`direction_execution` 状态 `pass` | 实测 `length_scale=1.3` 与 `pause_after_ms=450` 生效，显式标记 `emotion`/`emphasis`/`timbre_modulation` 为 `unsupported` |
+| **物理隔离盲测包与工作流实测** | `validation/listening-unrated/`、`private/listening-blind-map.json`、`validation/blindtest-workflow-check.json` | 9 个匿名真实音频 `A.wav`–`I.wav`（`seed=17`）全部通过解码与元数据剥离校验；隔离汇总与揭盲流程验证通过 | `validation/listening-unrated/ratings/ratings.csv` 保持空白未评分（`human_listening: not_performed`）；不编造人类评分 |
+| **真实授权 XTTS 克隆** | `validation/xtts-blocked.json`、`tests/test_xtts_integration.py` | 门禁阻断返回码 `2`；真实跨文本集成测试 `skipped` | 未安装 `coqui-tts`，无合法真人参考录音与 XTTS 权重；绝不伪造克隆样本或相似度指标 |
 
-## 4. 实际执行与结果
+### Piper 7 类中文重点场景 CER 诊断汇总（3 重复 × 2 手臂）
 
-### 自动化测试
+| 用例 ID | 类别 | `norm` CER 均值 (min–max) | `raw` CER 均值 (min–max) | `norm` `cer_text` / `num_cer` | 关键诊断结论 |
+|---|---|---:|---:|---:|---|
+| `zh_plain` | 普通中文 | 0.1146 (0.0938–0.1562) | 0.1458 (0.1250–0.1562) | 0.1146 / None | 基础发音清晰，ASR 误差源于“再→在”“合→核”同音转写 |
+| `digits_date` | 数字日期 | 0.0938 (0.0625–0.1250) | 0.2708 (0.2500–0.2812) | 0.1755 / **0.0000** | 规范化消除年份基数误读（二千二十六）及冒号/小数点漏读，`norm` 数词 CER 降为 0 |
+| `mixed_en` | 中英混合 | 0.3763 (0.3226–0.4516) | 0.4301 (0.4194–0.4516) | 0.4286 / 0.3333 | 单语中文模型直读英文失真；音译词（吉皮优/西皮优）被 Whisper 写成同音字（极皮幼/细皮幼），不可当作成品交付 |
+| `proper` | 专有名词 | 0.2933 (0.2800–0.3200) | 0.3067 (0.2400–0.4000) | 0.2933 / None | 词典使发音变为预定音译（派珀/欧朋艾艾），但 ASR 转写为同音异形字（拍扑/欧彭爱爱），证明词典读法必须靠人耳验收而非字面 CER |
+| `polyphone` | 多音字 | 0.0667 (0.0000–0.1000) | 0.0500 (0.0000–0.1500) | 0.0667 / None | 常见词组（银行行长/重庆重要）发音正确，生僻或歧义语境多音字仍需人工核对 |
+| `zh_emotional_turn` | 叙事韵律 | 0.0595 (0.0357–0.0714) | 0.0714 (0.0714–0.0714) | 0.0595 / None | 字面可懂度高，但叙事转折的停顿与语气表现力需盲听评估 |
+| `zh_long` | 长文本段落 | 0.1867 (0.1733–0.2000) | 0.2044 (0.1600–0.2400) | 0.1867 / None | 信号稳定，ASR 存在多处同音字替换（借道/灵性/正期/暗静） |
 
-最终命令：
+## 4. 关键资产哈希与复现方式
 
-```bash
-TTS_PIPER_MODEL=/home/user/.cache/tts-models/zh_CN-huayan-medium.onnx python -m pytest -q
-```
+- **测试用本地模型（未入库）**：
+  - `zh_CN-huayan-medium.onnx`：63,201,294 bytes，SHA256 `9929917bf8cabb26fd528ea44d3a6699c11e87317a14765312420be230be0f3d`
+  - `zh_CN-huayan-medium.onnx.json`：4,822 bytes，SHA256 `d521dc45504a8ccc99e325822b35946dd701840bfb07e3dbb31a40929ed6a82b`
+- **核心脚本最终 SHA256**（与 `validation/source-versions.json` 及所有 `summary.json` 内 `source_sha256` 完全一致）：
+  - `scripts/blindtest.py`：`0e1d36409614b9a8414e577920cb50750a5f06e61a3998f8d65e33c6ec0d87ae`
+  - `scripts/engines.py`：`3de29a2eb1b6c5bf6d4f79825c20bb8f3923e39bd591383179ce9db415303ec0`
+  - `scripts/qa.py`：`64b049aa954434da3bf24148542a79ff9a0a672e03ab39c255cf007184129c46`
+  - `scripts/textnorm.py`：`e4c929a8a8e31db5b2e076c42dbca962ab896b76bfceef7fd23c05318efbb69e`
+  - `scripts/tts.py`：`4f119cfcf88eb963db57d8ab7ab8f92e6478585b1bd68ff8be6d055b7867eb9c`
+  - `tests/cases.jsonl`：`266e60ef8504c64b1f141204e33a94e15dd1ba7d0b669a9dc2186ceeb215501c`
+  - `tests/run_eval.py`：`c19f27206c6e0a236b329ff942ba41a4be0d6699603caed6d402685b8fd68971`
+- **完整复现命令**：
+  ```bash
+  bash validation/reproduce.sh /path/to/zh_CN-huayan-medium.onnx new-validation private-out
+  ```
+- 全仓 100+ 交付文件与全部 77 个真实 `.wav` 音频的字节大小与 SHA256 清单见 `validation/artifact-manifest.json`。
 
-**143 passed / 1 skipped**。其中原Piper真实集成8项全部通过；eSpeak真实中、英、德、日执行与导演语速测试通过；授权/过期/撤销/哈希/隐私/输入碰撞/写失败/空与NaN/静音分母/ASRskip/盲听缺失等均有测试。
-唯一skip为真实XTTS跨文本集成：需 TTS_XTTS_MODEL/CONFIG/LANGUAGE/REFERENCE/AUTHORIZATION/PURPOSE 六项；没有这些合法资产，未安装coqui-tts，不尝试下载他人声音或克隆权重。XTTS替身契约的合成音是正弦测试信号，**不是克隆样本**。
-最终日志 validation/pytest-full.log；不设置Piper模型时另一次为135 passed / 9 skipped（含8项Piper与1项XTTS），见 validation/pytest-no-piper.log；没有Piper环境变量时其8项会明确跳过，不伪装单元替身为真实模型。
+## 5. 剩余风险与分阶段验收结论
 
-### 真实重复合成与ASR
+### 剩余风险
+1. **中英混合与专名发音局限**：单语中文 Piper 模型（`huayan`）直读英文严重失真，词典音译虽可固定读法但听感生硬且易触发 ASR 同音异形字误报；高标准中英混读需多语言原生模型并经人工听审。
+2. **主观听感与真实克隆待外部条件闭环**：`validation/listening-unrated` 已备好 9 个真实试听音频与隔离映射，仍待具备目标语言母语能力的独立评员完成盲听打分；真实 XTTS 克隆需在具备合法授权参考录音与本地模型权重的环境中执行。
+3. **长文本内存边界与授权法律属性**：当前合成仍采用全量音频驻留内存（上限 30 分钟/10 万字符），超长内容需按章节分批并配合 `--checkpoint-dir`；HMAC-SHA256 签名保障授权文件防篡改，但签署人真实身份与法律效力仍依赖外部合规流程。
 
-共 **42个评测音频**：Piper 18 + eSpeak 24。所有文件信号层无fail/warn；**ASR并未全通过**：Piper 7 fail/2 warn，eSpeak en-US 6 warn。原始逐次结果见 validation/*/summary.json，包含完整ASR文本、归一化参考与音频/代码哈希。数值评测后仅修正QA帮助中的旧噪声断言及无效注释，未改数值路径；最终与评测来源哈希差异记录在 validation/source-versions.json，原哈希不回填。
-
-| Piper用例（各3重复） | norm CER均值 | raw CER均值 | 解读 |
-|---|---:|---:|---|
-| 数字日期 | 0.0834 | 0.2604 | 本批次联合规范化方向有利，不证明总体优化有效 |
-| 中英混合 | 0.3011 | 0.4839 | 两手臂全部触发ASR fail，不能作为发音准确的成品交付 |
-| 叙事转折 | 0.0714 | 0.0714 | 文本低错误代理，不证明自然度或情绪 |
-
-eSpeak en-US数字文本CER 0.125；en-GB/de/ja只信号验收，没有ASR/人评。norm包含词典+规范化而raw直送，是联合干预，不能写成单一规则消融；外语两手臂大多相同，只作技术零效应对照。3重复、1个ASR和小文本集不建立统计显著性/模型排名。运行期间部分测试并行，性能数字不能当隔离硬件基准。
-
-### 长文本与实际导演执行
-
-长文本 **1072字符（含标点空白）、64段、203.976秒**；有效信号177.886秒；合成与写出wall25.765秒、峰值RSS406.055MiB、RTF0.109。QA退出0无fail/warn；合成报告段RMS标准差1.033dB有提示，未靠自动归一化抹平。没有ASR/人评，未测10分钟以上实际长篇。见 validation/long.json、long-qa.json、long-resources.json。
-direction样例真实eSpeak执行并通过技术QA；语速变化与参数恢复由真实集成测试验证。仅证明控制确实生效，不证明语义表达更自然。
-
-### 人评与克隆证据
-
-生成 validation/listening-unrated 四个匿名实际试听样本与**空**ratings.csv；无scores.json，**没有人类评分/克隆相似度**。评员只收listen/与ratings.csv，不收blind_map.json。测试中填写的固定分数只是评分机制fixture，不能转录为听评记录。
-
-## 5. 已知限制、阻塞与剩余风险
-
-1. **专业级终验未完成**：需要具有目标语言能力的真实匿名评员，覆盖发音、自然度、韵律、表现力、音色和连续性；同时需要合法XTTS本地模型/参考与许可后做真实跨文本/跨语言克隆实验。
-2. 中文旧年份猜测、范围、长编号、多音字与混合语言仍需人工检查；非中文不承诺自动数字读法。脚本识别无法可靠处理所有语言/口音。不能凭低CER删除原文难点。
-3. 授权JSON可被操作者伪造，无法验证签署人法律身份；文件检查与推理之间有本地并发变更风险。真正安全部署需签署验证、私有资产ACL、加密、不可变文件、审计/删除机制。脚本已避免报告泄露身份/参考路径，但业务文本/模型路径仍可能敏感。
-4. XTTS本地加载仍可能需要vocab等资源；不可信torch权重有代码执行风险。Piper中文前端与ASR首次初始化可能联网，离线需预置。模型许可Unknown不能默认商用；源码缺LICENSE，需仓库所有者澄清。
-5. 技术失败会阻断对应执行，但qa 0不等于人评通过；ASRskip须明示。Piper/XTTS挂起尚无进程硬超时；全音频内存与30分钟上限不是恒定内存承诺；失败只能有界重试，不能恢复未保存的段。
-6. 每个文件原子替换，不是整组事务；失败后须依失败报告排除旧母版/派生件。不应把不同运行的文件、文本或报告混用。
-
-优先后续：补真实人评与授权克隆资产 → 对高风险混合语言形成业务确认朗读稿/选实际多语言模型 → 更长章节级压力测试/进程超时隔离。不是继续堆叠场景参数、模型推荐或相似度阈值。
-
-## 6. 分项评分（10分制、审计者主观成熟度，非MOS/实测音质分数）
-
-| 维度 | 评分 | 依据与扣分 |
-|---|---:|---|
-| 架构 | 8 | 标准结构/单决策/薄适配；仍全量驻留 |
-| 声音导演 | 6 | 语义理由与真实逐段语速；无真实听评或细粒度表现力控制 |
-| 多语言 | 6 | 实际四语言与locale约束；语言识别/数字消歧/混合语言受限 |
-| 克隆 | 4 | 实现本地调用/授权/契约；真实克隆与音色保持完全未验证 |
-| 安全 | 7 | fail-closed门禁/绑定/脱敏/输入保护；法律真实性/加密/ACL非自动实现 |
-| 音质 | 5 | 信号验收与重复ASR；混合用例fail，专业自然度未知 |
-| 可靠性 | 7 | 真集成/长文本/异常与原子音频；无硬超时/断点/组事务 |
-| 可维护性 | 8 | Context精简与回归覆盖；执行代码规模增长、可选依赖仍需维护 |
-
-这些分数用于表达当前可验证成熟度，不用于证明音质改善或给模型排行。
-
-## 7. 交付物
-
-- 修改后的完整仓库、统一README/SKILL/参考资料、模板与测试。
-- validation/ 当前客观证据、环境/资产与源码哈希、未评分匿名试听包与复现脚本。
-- 不含模型权重、私人参考音频或真实授权记录；无GitHub远端提交。
+### 分阶段验收结论
+- **阶段一（代码架构、声音导演契约、生产可靠性与安全隔离）**：**通过（Passed）**。158 项自动化回归与真实引擎集成测试全部通过，硬超时、取消、整组事务回滚、断点恢复、资产哈希绑定、HMAC 授权验签、恶意模型拦截与盲测三方隔离均已闭环。
+- **阶段二（真实引擎客观评测与可追溯证据交付）**：**通过（Passed）**。77 个真实合成与盲听 `.wav` 音频、ASR 原始输出、源码哈希与 `artifact-manifest.json` 完全一致且受控入库，消除了基线仓库的证据缺失与映射泄露。
+- **阶段三（专业级人类主观盲听认证与真实授权克隆终验）**：**挂起待外部资产/人评（Pending External Human Raters & Authorized Clone Assets）**。在补齐真人盲评与合法克隆模型/参考录音前，不宣称专业级主观听感或真实克隆终验完成。

@@ -270,6 +270,7 @@ def _main(argv=None):
         expected = Path(args.text_file).read_text(encoding="utf-8")
     spoken = False
     language = args.language
+    synthesis = None
     if args.synthesis_report:
         synthesis = json.loads(Path(args.synthesis_report).read_text(encoding="utf-8"))
         import hashlib
@@ -284,6 +285,20 @@ def _main(argv=None):
         language = detect_language(expected)
     lex = load_lexicon(args.lexicon) if args.lexicon else None
     checks = run_signal_checks(x, sr, info)
+    if synthesis and synthesis.get("direction") is not None:
+        dv = synthesis.get("direction_validation") or {}
+        beats = dv.get("beats", [])
+        all_ok = bool(beats) and all(b.get("signal_execution_verified") for b in beats)
+        checks.append(_check(
+            "direction_execution",
+            "pass" if all_ok else "warn",
+            {
+                "beat_count": len(beats),
+                "supported_controls": dv.get("supported_controls", []),
+                "unsupported_or_unverified": dv.get("unsupported_or_unverified", {}),
+            },
+            "语境→意图→可听变化→引擎支持控制（语速/段间停顿）已核验；情绪/重音不支持，自然度需人评",
+        ))
     if info.channels > 1:
         import soundfile as sf
         raw, _ = sf.read(str(path), dtype="float32", always_2d=True)

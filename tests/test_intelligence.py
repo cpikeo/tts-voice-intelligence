@@ -94,7 +94,7 @@ def test_non_chinese_never_uses_chinese_number_rules(locale, text):
     assert textnorm.normalize_text(text, locale) == text
 
 
-@pytest.mark.parametrize("text", ["2026-02-30", "2026/13/01", "25:30", "10:60"])
+@pytest.mark.parametrize("text", ["2026-02-30", "2026/13/01", "2026年2月30日", "2026年13月1日", "2月30日", "25:30", "10:60"])
 def test_invalid_date_time_rejected(text):
     with pytest.raises(ValueError):
         textnorm.normalize_text(text, "zh-CN")
@@ -366,3 +366,254 @@ def test_piper_wraps_native_failure():
     engine.syn = None
     with pytest.raises(tts.EngineError, match="Piper 合成失败"):
         engine.synthesize("test")
+
+
+def test_direction_full_chain_pause_and_qa_verification(tmp_path):
+    class RateSignal(Signal):
+        name = "espeak"
+        speed = 175
+        capabilities = {"rate": True, "pause_override": True}
+        def synthesize(self, text):
+            scale = 175 / self.speed
+            n = int(SR * scale)
+            return (.1 * np.sin(np.arange(n) * .08)).astype(np.float32)
+
+    engine = RateSignal()
+    text = "First statement. This discovery changes everything."
+    plan = {
+        "context": "Background setup followed by pivotal conclusion",
+        "intent": "Highlight the consequence calmly",
+        "audience": "domain learners",
+        "character": "measured narrator",
+        "audible_goal": "Slow down the second sentence and leave a 500ms reflection pause",
+        "unsupported_capabilities": ["emotion", "emphasis", "timbre_modulation"],
+        "beats": [
+            {
+                "index": 1,
+                "text": "This discovery changes everything.",
+                "context": "Pivotal turn",
+                "intent": "Let the conclusion land",
+                "rationale": "Slow down tempo and add boundary pause without faking emotion",
+                "audible_change": "Slower tempo (length_scale=1.4) + 500ms post-pause",
+                "length_scale": 1.4,
+                "pause_after_ms": 500,
+            }
+        ],
+    }
+    audio, sr, rep = tts.synthesize_text(engine, text, language="en-US", direction=plan,
+                                         processing="minimal", pauses={})
+    # Segment 0 ~ 1.0s, Segment 1 ~ 1.4s + 0.5s pause = ~2.9s total
+    assert rep["duration_seconds"] == pytest.approx(2.9, abs=0.05)
+    dv = rep["direction_validation"]
+    assert dv["context"] == plan["context"]
+    assert dv["unsupported_or_unverified"]["emotion"] == "unsupported"
+    assert dv["unsupported_or_unverified"]["emphasis"] == "unsupported"
+    assert dv["unsupported_or_unverified"]["timbre_modulation"] == "unsupported"
+    assert dv["beats"][0]["signal_execution_verified"] is True
+    assert dv["beats"][0]["measured"]["pause_after_ms"] == 500.0
+
+    wav = tts.write_audio(tmp_path / "dir.wav", audio, sr)
+    rep["output"] = str(wav)
+    rep["output_sha256"] = tts.sha256_file(wav)
+    rep_file = tmp_path / "dir.json"
+    rep_file.write_text(json.dumps(rep), encoding="utf-8")
+    qa_rep = tmp_path / "qa.json"
+    assert qa.main([str(wav), "--synthesis-report", str(rep_file), "--report", str(qa_rep)]) == 0
+    checks = {c["name"]: c for c in json.loads(qa_rep.read_text())["checks"]}
+    assert checks["direction_execution"]["status"] == "pass"
+
+    # Reject invalid pause_after_ms or unsupported top-level/beat controls
+    bad_plan = json.loads(json.dumps(plan))
+    bad_plan["beats"][0]["pause_after_ms"] = -10
+    with pytest.raises(ValueError, match="pause_after_ms"):
+        tts.synthesize_text(engine, text, language="en-US", direction=bad_plan, processing="minimal", pauses={})
+
+
+def test_engine_hard_timeout_does_not_retry():
+    import time
+    calls = []
+    class HangingEngine(Signal):
+        timeout = 0.05
+        def synthesize(self, text):
+            calls.append(text)
+            time.sleep(0.5)
+            return super().synthesize(text)
+
+    t0 = time.perf_counter()
+    with pytest.raises(engines.EngineTimeoutError, match="超时"):
+        tts.synthesize_text(HangingEngine(), "第一句。")
+    assert time.perf_counter() - t0 < 0.4
+    assert len(calls) == 1  # Hard timeouts must never be retried
+
+
+def test_cancellation_aborts_immediately_and_restores_state():
+    import threading
+    ev = threading.Event()
+    calls = []
+    class CancelEngine(Signal):
+        name = "espeak"
+        speed = 175
+        capabilities = {"rate": True}
+        def synthesize(self, text):
+            calls.append(text)
+            ev.set()
+            return super().synthesize(text)
+
+    eng = CancelEngine()
+    plan = {
+        "intent": "test", "audience": "test", "character": "test",
+        "beats": [{"index": 0, "text": "第一句。", "intent": "slow", "rationale": "r", "length_scale": 1.3}],
+    }
+    with pytest.raises(tts.EngineError, match="取消"):
+        tts.synthesize_text(eng, "第一句。第二句。", direction=plan, cancel_event=ev)
+    assert len(calls) == 1
+    assert eng.speed == 175
+
+
+def test_transactional_bundle_rollback_on_failure(tmp_path, monkeypatch):
+    wav = tmp_path / "out.wav"
+    flac = tmp_path / "out.flac"
+    ogg = tmp_path / "out.ogg"
+    rep_path = tmp_path / "report.json"
+    wav.write_bytes(b"original-wav")
+    flac.write_bytes(b"original-flac")
+    rep_path.write_text('{"prior": true}', encoding="utf-8")
+
+    orig_stage = tts._stage_audio_file
+    def fail_on_ogg(path, audio, sr, fmt=None, subtype=None):
+        if (fmt or Path(path).suffix.lstrip(".")).lower() == "ogg":
+            raise RuntimeError("simulated ogg encoder failure")
+        return orig_stage(path, audio, sr, fmt=fmt, subtype=subtype)
+
+    monkeypatch.setattr(tts, "_stage_audio_file", fail_on_ogg)
+    with pytest.raises(RuntimeError, match="simulated ogg"):
+        tts.transactional_write_bundle(
+            wav, Signal().synthesize("x"), SR,
+            derived_formats=["flac", "ogg"],
+            report={"ok": True}, report_path=rep_path,
+        )
+    assert wav.read_bytes() == b"original-wav"
+    assert flac.read_bytes() == b"original-flac"
+    assert not ogg.exists()
+    assert json.loads(rep_path.read_text(encoding="utf-8")) == {"prior": True}
+    assert not list(tmp_path.glob("*.staged.*")) and not list(tmp_path.glob("*.rollback.bak"))
+
+
+def test_checkpoint_failure_recovery_and_mismatch_guard(tmp_path):
+    ckpt = tmp_path / "ckpt"
+    calls = []
+    fail_second = True
+
+    class RecoverableEngine(Signal):
+        def synthesize(self, text):
+            calls.append(text)
+            if fail_second and "第二句" in text:
+                raise tts.EngineError("transient crash on seg 2")
+            return super().synthesize(text)
+
+    eng = RecoverableEngine()
+    with pytest.raises(tts.EngineError, match="第 2 段合成失败"):
+        tts.synthesize_text(eng, "第一句。第二句。第三句。", processing="minimal", pauses={}, checkpoint_dir=ckpt)
+    assert (ckpt / "seg_0000.wav").is_file()
+    state = json.loads((ckpt / "state.json").read_text(encoding="utf-8"))
+    assert state["failed_segment"] == 1 and "0" in state["segments"]
+
+    # Resume with fixed engine: segment 0 must be loaded from checkpoint without re-synthesizing
+    fail_second = False
+    calls.clear()
+    audio, sr, rep = tts.synthesize_text(eng, "第一句。第二句。第三句。", processing="minimal", pauses={}, checkpoint_dir=ckpt)
+    assert calls == ["第二句。", "第三句。"]
+    assert rep["checkpoint_recovery"]["resumed_segments"] == 1
+    assert rep["checkpoint_recovery"]["synthesized_segments"] == 2
+    assert len(audio) == SR * 3
+
+    # Mismatched text with same checkpoint_dir must be rejected
+    with pytest.raises(ValueError, match="不匹配"):
+        tts.synthesize_text(eng, "被篡改的第一句。第二句。第三句。", processing="minimal", pauses={}, checkpoint_dir=ckpt)
+
+
+def test_signed_authorization_and_asset_binding(tmp_path, monkeypatch):
+    wav, model, auth, data = grant(tmp_path)
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({"model": "xtts", "languages": ["en", "zh-cn"]}))
+
+    # Unsigned record must fail when require_signature=True
+    with pytest.raises(tts.EngineError, match="签名"):
+        engines.validate_authorization(auth, wav, "contract-test", signing_key="k1", require_signature=True)
+
+    # Sign record and verify
+    data["signature"] = engines.sign_authorization(data, "secret-signing-key", key_id="prod-key-1")
+    auth.write_text(json.dumps(data), encoding="utf-8")
+    summary = engines.validate_authorization(auth, wav, "contract-test", signing_key="secret-signing-key", require_signature=True)
+    assert summary["verification"] == "hmac_sha256_verified"
+    assert summary["signature_key_id"] == "prod-key-1"
+
+    # Wrong key or tampered payload after signing must fail closed
+    with pytest.raises(tts.EngineError, match="签名校验失败"):
+        engines.validate_authorization(auth, wav, "contract-test", signing_key="wrong-key", require_signature=True)
+
+    # Template placeholder must fail closed even if consent=True
+    bad_data = dict(data)
+    bad_data["record_id"] = "REPLACE-WITH-PRIVATE-RECORD-ID"
+    bad_data["signature"] = engines.sign_authorization(bad_data, "secret-signing-key")
+    auth.write_text(json.dumps(bad_data), encoding="utf-8")
+    with pytest.raises(tts.EngineError, match="占位符"):
+        engines.validate_authorization(auth, wav, "contract-test", signing_key="secret-signing-key")
+
+    # Restore valid signed auth and test post-init asset mutation detection
+    auth.write_text(json.dumps(data), encoding="utf-8")
+    class FakeAPI:
+        def __init__(self, **kw):
+            self.synthesizer = SimpleNamespace(output_sample_rate=SR)
+        def tts(self, **kw):
+            return Signal().synthesize("x")
+    module = ModuleType("TTS.api")
+    module.TTS = FakeAPI
+    monkeypatch.setitem(sys.modules, "TTS", ModuleType("TTS"))
+    monkeypatch.setitem(sys.modules, "TTS.api", module)
+    engine = engines.XTTSEngine(model, config, "en", wav, auth, "contract-test",
+                                signing_key="secret-signing-key", require_signature=True)
+    model.write_bytes(b"tampered after init")
+    with pytest.raises(tts.EngineError, match="绑定|不符"):
+        engine.synthesize("test")
+
+
+def test_untrusted_model_pickle_and_zip_slip_rejected(tmp_path):
+    import zipfile
+    # 1. Raw malicious pickle payload calling os.system
+    evil_pkl = b"\x80\x04\x95\x1d\x00\x00\x00\x00\x00\x00\x00\x8c\x05posix\x94\x8c\x06system\x94\x93\x94\x8c\x02id\x94\x85\x94R\x94."
+    p1 = tmp_path / "evil.pth"
+    p1.write_bytes(evil_pkl)
+    with pytest.raises(tts.EngineError, match="高危"):
+        engines.inspect_model_safety(p1, engine="xtts")
+
+    # 2. ZIP checkpoint with embedded malicious data.pkl
+    p2 = tmp_path / "zip_evil.pth"
+    with zipfile.ZipFile(p2, "w") as zf:
+        zf.writestr("archive/data.pkl", evil_pkl)
+    with pytest.raises(tts.EngineError, match="高危"):
+        engines.inspect_model_safety(p2, engine="xtts")
+
+    # 3. ZIP slip path traversal
+    p3 = tmp_path / "zip_slip.pth"
+    with zipfile.ZipFile(p3, "w") as zf:
+        zf.writestr("../escape.txt", b"bad")
+    with pytest.raises(tts.EngineError, match="路径穿越"):
+        engines.inspect_model_safety(p3, engine="xtts")
+
+    # 4. Unsafe config with remote URL or path traversal
+    with pytest.raises(tts.EngineError, match="不安全配置路径"):
+        engines.inspect_model_safety(None, engine="xtts", config_data={"vocab_path": "../../etc/passwd"})
+
+
+@pytest.mark.skipif(not shutil.which("espeak-ng"), reason="espeak-ng missing")
+def test_isolated_subprocess_synth_cli(tmp_path):
+    out = tmp_path / "iso.wav"
+    rep = tmp_path / "iso.json"
+    assert tts.main(["synth", "--engine", "espeak", "--language", "en-US",
+                     "--text", "Subprocess model isolation test.",
+                     "--isolate-model", "--out", str(out), "--report", str(rep)]) == 0
+    assert out.is_file() and rep.is_file()
+    data = json.loads(rep.read_text(encoding="utf-8"))
+    assert data["ok"] is True and data["delivery_transaction"] == "atomic_group_committed"
+

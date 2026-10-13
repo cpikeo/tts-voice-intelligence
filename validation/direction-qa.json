@@ -17,7 +17,7 @@
     {
       "name": "duration",
       "status": "pass",
-      "value": 2.838,
+      "value": 3.288,
       "detail": ""
     },
     {
@@ -35,7 +35,7 @@
     {
       "name": "dc_offset",
       "status": "pass",
-      "value": 0.00071,
+      "value": 0.00061,
       "detail": ""
     },
     {
@@ -63,6 +63,25 @@
       "detail": "静音区孤立尖峰数"
     },
     {
+      "name": "direction_execution",
+      "status": "pass",
+      "value": {
+        "beat_count": 1,
+        "supported_controls": [
+          "length_scale",
+          "pause_after_ms"
+        ],
+        "unsupported_or_unverified": {
+          "emotion": "unsupported",
+          "emphasis": "unsupported",
+          "timbre_modulation": "unsupported",
+          "cross_segment_prosody_continuity": "unverified",
+          "human_perceptual_effect": "unverified_requires_human_listening"
+        }
+      },
+      "detail": "语境→意图→可听变化→引擎支持控制（语速/段间停顿）已核验；情绪/重音不支持，自然度需人评"
+    },
+    {
       "name": "speech_rate_chars_per_s",
       "status": "info",
       "value": 13.19,
@@ -71,7 +90,7 @@
     {
       "name": "delivery_rate_chars_per_s",
       "status": "info",
-      "value": 10.57,
+      "value": 9.13,
       "detail": "字符/成品总秒数，包含静音，不等同发声速度"
     }
   ],

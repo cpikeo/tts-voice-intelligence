@@ -1,14 +1,24 @@
 {
+  "context": "课程核心结论揭示段落，前文已完成背景铺垫",
   "intent": "让听众理解发现的后果，而非夸张播报",
   "audience": "课程学习者",
   "character": "同一位克制的讲解者",
+  "audible_goal": "关键结论句适度放慢语速并留出句尾消化停顿，保持同一音色与平稳动态",
+  "unsupported_capabilities": [
+    "emotion",
+    "emphasis",
+    "timbre_modulation"
+  ],
   "beats": [
     {
       "index": 0,
       "text": "This discovery changes everything.",
+      "context": "全篇转折句，首次提出颠覆性结论",
       "intent": "给新的关键结论消化时间",
-      "rationale": "语义发生转折，适度放慢；不承诺情绪或精细重音控制",
-      "length_scale": 1.3
+      "rationale": "语义发生转折，适度放慢语速并控制句后停顿；不承诺情绪或精细重音控制",
+      "audible_change": "语速放慢至约0.77倍（length_scale=1.3），句后停顿450ms",
+      "length_scale": 1.3,
+      "pause_after_ms": 450
     }
   ]
 }

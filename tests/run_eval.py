@@ -110,6 +110,8 @@ def main(argv=None):
             metrics = [{m["name"]: m for m in r.get("asr", [])} for r in arm]
             row[tag] = {"rtf": _stats([r.get("rtf") for r in arm]),
                         "cer": _stats([m.get("asr_cer", {}).get("value") for m in metrics]),
+                        "cer_text": _stats([m.get("asr_cer_text", {}).get("value") for m in metrics]),
+                        "num_cer": _stats([m.get("asr_num_cer", {}).get("value") for m in metrics]),
                         "errors": [r["error"] for r in arm if "error" in r],
                         "asr_status": [m.get("asr_cer", {}).get("status", "not_requested") for m in metrics]}
         rows.append(row)

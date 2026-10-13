@@ -98,7 +98,15 @@ def mask_numbers(text: str) -> str:
 
 def normalize_zh(text: str, lexicon=None) -> str:
     t = text
-    # 0. 发音词典：用哨兵占位，保证朗读形式不被后续规则改写
+    # 0. 仅把全角数字/拉丁字母/％ 转半角；全角标点（，。！？）必须保留，NFKC 会破坏其韵律语义
+    #    放在词典匹配前，使全角英文术语（如 ＧＰＵ）也能命中词典
+    t = "".join(
+        unicodedata.normalize("NFKC", ch)
+        if ("\uff10" <= ch <= "\uff19" or "\uff21" <= ch <= "\uff3a"
+            or "\uff41" <= ch <= "\uff5a" or ch == "\uff05") else ch
+        for ch in t
+    )
+    # 0b. 发音词典：用哨兵占位，保证朗读形式不被后续规则改写
     guards = []
     if lexicon:
         for i, (src, dst) in enumerate(lexicon):
@@ -111,24 +119,27 @@ def normalize_zh(text: str, lexicon=None) -> str:
                 t = t.replace(src, tok)
             if n:
                 guards.append((tok, dst))
-    # 仅把全角数字/拉丁字母/％ 转半角；全角标点（，。！？）必须保留，NFKC 会破坏其韵律语义
-    t = "".join(
-        unicodedata.normalize("NFKC", ch)
-        if ("\uff10" <= ch <= "\uff19" or "\uff21" <= ch <= "\uff3a"
-            or "\uff41" <= ch <= "\uff5a" or ch == "\uff05") else ch
-        for ch in t
-    )
     t = re.sub(r"[*#`]+", "", t)              # 去除常见 Markdown 残留
     t = t.replace("&", "和").replace("+", "加")
     t = re.sub(r"[ \t]+", " ", t)
 
-    # 1. 日期 2026/10/12、2026-10-12（必须早于年份与负号规则，否则只剩分隔符）
+    # 1. 日期 2026/10/12、2026-10-12、2026年10月12日（必须早于年份与负号规则，并校验合法日历日）
     def _date(m):
         y, mo, d = m.group(1), int(m.group(2)), int(m.group(3))
+        suffix = m.group(4) if m.lastindex and m.lastindex >= 4 and m.group(4) else "日"
         from datetime import date
         date(int(y), mo, d)  # Reject invalid dates rather than confidently reading them
-        return f"{digits_zh(y)}年{int_zh(mo)}月{int_zh(d)}日"
+        return f"{digits_zh(y)}年{int_zh(mo)}月{int_zh(d)}{suffix}"
     t = re.sub(r"(?<!\d)(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})(?!\d)", _date, t)
+    t = re.sub(r"(?<!\d)(\d{4})年(\d{1,2})月(\d{1,2})([日号])", _date, t)
+
+    def _month_day(m):
+        mo, d, suffix = int(m.group(1)), int(m.group(2)), m.group(3)
+        from datetime import date
+        date(2024, mo, d)  # Validate month/day (allow Feb 29 when year omitted)
+        return f"{int_zh(mo)}月{int_zh(d)}{suffix}"
+    t = re.sub(r"(?<!\d)(\d{1,2})月(\d{1,2})([日号])", _month_day, t)
+
     # 2. 带“亿/万”单位的数量（1亿2000万 -> 一亿二千万）
     #    必须早于年份规则，否则“2000万”会被当成年份 2000 逐位读成“二零零零万”
     t = re.sub(r"(\d+(?:\.\d+)?)\s*([亿万])",
@@ -145,9 +156,10 @@ def normalize_zh(text: str, lexicon=None) -> str:
         prefix = "零" if mi < 10 else ""
         return f"{int_zh(h)}点{prefix}{int_zh(mi)}分"
     t = re.sub(r"(?<!\d)(\d{1,2}):(\d{2})(?!\d)", _time, t)
-    # 4. 编号/型号（A-1024、GPT-4）：数字逐位读，不做数值读法
+    # 5. 编号/型号（A-1024、GPT-4）及前导零编号（001024）：数字逐位读，不做数值读法
     t = re.sub(r"(?<![A-Za-z0-9])([A-Za-z]{1,10})-(\d+)(?![A-Za-z0-9])",
                lambda m: f"{m.group(1)}-{digits_zh(m.group(2))}", t)
+    t = re.sub(r"(?<![\d.])(0\d+)(?![\d.])", lambda m: digits_zh(m.group(1)), t)
     # 6. 百分比
     t = re.sub(r"(\d+(?:\.\d+)?)\s*%", lambda m: "百分之" + _num(m.group(1)), t)
     # 7. 负号（不触碰范围 10-20 与已处理完的日期）

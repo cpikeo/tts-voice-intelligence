@@ -1,23 +1,37 @@
-# 声音导演与盲听依据（按需读取）
+# 声音导演契约与隔离盲听协议（按需读取）
 
 核心决策只在 SKILL.md；此处不再重复场景参数表或规范化规则。
 
-## 意图例子，而非参数配方
+## 声音导演五步链（语境 → 意图 → 可听变化 → 引擎控制 → 结果验证）
 
-“已经完成了。”可能是确认事实、惊讶、松一口气或不相信。先看上下文、人物关系与听众；确认事实可保持稳定节奏，新的关键结论可给理解时间，惊讶不应仅以更响表达。Piper/eSpeak当前只有语速等有限直接控制：用准确标点和语义边界作间接尝试，解释无法保证的情绪/重音，不声称情绪已实现。
-
-策略文件 `--direction` 顶层含 `intent/audience/character`；可选 `beats` 中每项 `index/text/intent/rationale/length_scale`。index 是规范化后分段序号（从0起），text 必须与实际段一致；length_scale 只适用已实现的 Piper/eSpeak。模板 `assets/direction.example.json`。整篇参数保持一致不是绝对原则：角色音色/参考保持固定，语速变化应有语义理由，不随机抖动。短内容优先整句，不为规则强行切片；独立合成没有跨段记忆，需听评验证连续性。
+1. **语境理解 (`context`)**：明确当前句在全篇的位置、人物关系、信息新旧与转折关系（如“前文铺垫后的颠覆性结论”）。
+2. **表达目标 (`intent` / `rationale`)**：明确要让听众获得什么认知或感受（如“给关键结论留出消化时间，避免夸张播报”）。
+3. **可听变化 (`audible_change`)**：将抽象意图转化为可听的声学目标（如“语速放慢至约 0.77 倍，句尾留 450ms 停顿”）。
+4. **引擎支持的控制 (`length_scale` / `pause_after_ms`) 与不支持项标记**：
+   - 已实现直接控制：Piper/eSpeak 的逐段 `length_scale`（`0.5..2.0`）与管线逐段边界停顿 `pause_after_ms`（`0..5000` ms，即使在 `minimal` 模式下也可由 beat 显式指定）。
+   - 未实现控制拒绝伪装：在 `direction` 或 `beats` 中传入 `emotion`、`emphasis`、`timbre`、`pitch`、`style` 等参数立即抛出 `ValueError`。
+   - 合成报告 `direction_validation` 显式标记：`emotion: "unsupported"`、`emphasis: "unsupported"`、`timbre_modulation: "unsupported"`、`cross_segment_prosody_continuity: "unverified"`、`human_perceptual_effect: "unverified_requires_human_listening"`。
+5. **结果验证 (`direction_validation` + QA `direction_execution`)**：
+   - 信号层核验每段实际 `duration_seconds`、`active_seconds`、`speech_rate_chars_per_s` 与 `pause_after_ms` 是否按契约生效；`qa.py --synthesis-report` 自动输出 `direction_execution` 检查项。
+   - 信号层控制生效不等同主观表现力自然，最终韵律与情绪传染力须经盲听人评确认。
 
 ## 停顿与处理的代价
 
-模型自身句尾静音可能是呼吸、韵律或多余留白，不能盲目删除。CLI minimal 保留原始段落音频，不额外插静音；可能仍有模型自身较长边界，需要实际听后调整。legacy 是显式编辑选项，不是自然停顿建模。默认不降噪/压缩/限幅；超峰只整体衰减，不修复已经削波的数据。
+CLI 默认 `minimal`：保留模型原始段落音频与句尾呼吸留白，仅在超峰时整体衰减，不逐段对齐 RMS、不加固定淡变或统一句间静音（除非 `direction` 的 beat 显式指定 `pause_after_ms`）。`--processing legacy` 仅在确需逐段 RMS 对齐（±12 dB）、12ms 淡变和固定停顿时显式启用。模型发音错误先修朗读稿/词典，不能用音频处理掩盖。
 
-RMS 是信号统计，不是感知响度或音色。一味逐段归一化可破坏情绪动态。12ms淡变可抑制边界突变，也可能削掉辅音起始；无听评不认定它一定更好。模型发音错误先修朗读稿/词典，不能用音频效果掩盖。
+## 物理隔离的盲听协议
 
-## 人工评测协议
-
-1. 用相同内容、授权与输出条件比较；记录评员id（匿名）、语言熟练度、设备/环境、随机种子与比较变量。至少多个文本与重复样本；单人偏好不能代表总体。
-2. prepare 后评员只接收 listen/ 与 ratings.csv，按 order.txt 试听。操作者保管 blind_map.json；同目录 chmod不是严格访问隔离，泄露映射须标非盲。
-3. accuracy评关键发音与遗漏；naturalness评像自然语言而非信号干净；prosody评语义重音与停顿；expressiveness评是否符合目的而非“越夸张越好”；timbre_consistency评同一身份感；continuity评段间衔接。不适用维度留空，不填0；工具会标记不完整并阻止普通揭盲。
-4. 克隆另用 **授权评员可听的目标参考** 与多个不同文本/语言比较，独立记录目标音色保持、跨文本稳定、语言漂移；当前评分工具的 timbre_consistency 是段内一致性，不自动等价于目标相似度。无嵌入/相似度模型，不编造数值。
-5. score只汇总人工输入，不证明评分真由人完成。保留原CSV、评员元数据与盲法偏离记录；任何演示测试分数只可标测试fixture，不作听感证据。修复只比较对应片段并复查整体衔接。
+1. **三方隔离 (`--isolate`)**：
+   ```bash
+   python scripts/blindtest.py prepare --audio sample1.wav sample2.wav \
+     --out validation/listening-unrated \
+     --ratings-dir validation/listening-unrated/ratings \
+     --map-file private/listening-blind-map.json --isolate --seed 17
+   ```
+   - `listen/`：仅含重编码剥离容器元数据的匿名音频（`A.wav..I.wav`）、`order.txt` 与不含源路径的 `manifest.json`（prepare 阶段自动解码验证可播放性、有限值与源文件名零残留）。
+   - `ratings/`：仅含发给人类评员的 `ratings.csv`（评完后生成 `scores.json` / `scores.md`）。
+   - `private/listening-blind-map.json`：操作者私有保存（`chmod 0600`），位于试听包目录之外且被 `.gitignore` 忽略，防止 Git 提交泄露映射。
+2. **无映射汇总与防篡改揭盲**：
+   - `blindtest.py score` 直接依据 `listen/manifest.json` 校验样本标签与试听文件哈希，无需访问私有 `blind_map.json`。
+   - `blindtest.py unblind` 强制核对所有样本全部 6 个维度已完整填写，并复核 `listen/*.wav` 的 SHA256 与 prepare 时一致（防试听音频被替换），通过后才输出揭盲表并写入 `unblinded.json` / `unblinded.md`。
+   - 严禁由 Agent 编造人工评分；测试中的固定分值仅作工作流回归 fixture，必须明确标注。

@@ -11,6 +11,7 @@
     "synthesis": {
       "ok": true,
       "direction": null,
+      "direction_validation": null,
       "engine": "espeak",
       "engine_info": "ok",
       "sample_rate": 22050,
@@ -22,13 +23,17 @@
           "index": 0,
           "text": "会議は十月十三日です。",
           "seconds": 7.488,
-          "synth_seconds": 0.024,
+          "synth_seconds": 0.018,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.46,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 0,
-          "samples": 165120
+          "samples": 165120,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 1.65
         },
         {
           "index": 1,
@@ -36,11 +41,15 @@
           "seconds": 7.386,
           "synth_seconds": 0.016,
           "pause_after": "none",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.29,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 165120,
-          "samples": 162861
+          "samples": 162861,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 2.15
         }
       ],
       "segment_count": 2,
@@ -195,23 +204,35 @@
         "voice": "locale default",
         "speakers": false,
         "rate": true,
+        "pause_override": true,
         "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
         "clone": false,
         "hardware": "CPU",
+        "timeout_seconds": 60.0,
         "dependencies": [
           "espeak-ng"
         ],
         "software_license": "GPL-3.0-or-later",
         "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
+        "resources": "no neural weights; executable hard timeout 60s"
       },
       "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "b285e7cbc8d364e009e4065ee38bd64934263a76a5ed927f627b967a51200cf4",
+        "resumed_segments": 0,
+        "synthesized_segments": 2
+      },
       "validation": {
         "human_listening": "not_performed",
         "asr": "not_performed"
       },
-      "synth_seconds": 0.039,
-      "rtf": 0.003,
+      "synth_seconds": 0.034,
+      "rtf": 0.002,
       "peak_dbfs": -2.21,
       "segment_rms_std_db": 0.085,
       "params": {
@@ -222,7 +243,8 @@
         "peak_limit_dbfs": -1.0,
         "lexicon_entries": 0,
         "processing": "minimal",
-        "max_output_seconds": 1800
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
       },
       "warnings": []
     },
@@ -286,7 +308,7 @@
         "detail": "静音区孤立尖峰数"
       }
     ],
-    "rtf": 0.003
+    "rtf": 0.002
   },
   {
     "id": "ja_names",
@@ -300,6 +322,7 @@
     "synthesis": {
       "ok": true,
       "direction": null,
+      "direction_validation": null,
       "engine": "espeak",
       "engine_info": "ok",
       "sample_rate": 22050,
@@ -311,25 +334,33 @@
           "index": 0,
           "text": "会議は十月十三日です。",
           "seconds": 7.488,
-          "synth_seconds": 0.016,
+          "synth_seconds": 0.014,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.46,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 0,
-          "samples": 165120
+          "samples": 165120,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 1.65
         },
         {
           "index": 1,
           "text": "東京から大阪まで移動します。",
           "seconds": 7.386,
-          "synth_seconds": 0.02,
+          "synth_seconds": 0.014,
           "pause_after": "none",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.29,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 165120,
-          "samples": 162861
+          "samples": 162861,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 2.15
         }
       ],
       "segment_count": 2,
@@ -484,22 +515,34 @@
         "voice": "locale default",
         "speakers": false,
         "rate": true,
+        "pause_override": true,
         "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
         "clone": false,
         "hardware": "CPU",
+        "timeout_seconds": 60.0,
         "dependencies": [
           "espeak-ng"
         ],
         "software_license": "GPL-3.0-or-later",
         "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
+        "resources": "no neural weights; executable hard timeout 60s"
       },
       "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "b285e7cbc8d364e009e4065ee38bd64934263a76a5ed927f627b967a51200cf4",
+        "resumed_segments": 0,
+        "synthesized_segments": 2
+      },
       "validation": {
         "human_listening": "not_performed",
         "asr": "not_performed"
       },
-      "synth_seconds": 0.036,
+      "synth_seconds": 0.029,
       "rtf": 0.002,
       "peak_dbfs": -2.21,
       "segment_rms_std_db": 0.085,
@@ -511,7 +554,8 @@
         "peak_limit_dbfs": -1.0,
         "lexicon_entries": 0,
         "processing": "minimal",
-        "max_output_seconds": 1800
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
       },
       "warnings": []
     },
@@ -589,6 +633,7 @@
     "synthesis": {
       "ok": true,
       "direction": null,
+      "direction_validation": null,
       "engine": "espeak",
       "engine_info": "ok",
       "sample_rate": 22050,
@@ -600,25 +645,33 @@
           "index": 0,
           "text": "会議は十月十三日です。",
           "seconds": 7.488,
-          "synth_seconds": 0.016,
+          "synth_seconds": 0.013,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.46,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 0,
-          "samples": 165120
+          "samples": 165120,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 1.65
         },
         {
           "index": 1,
           "text": "東京から大阪まで移動します。",
           "seconds": 7.386,
-          "synth_seconds": 0.016,
+          "synth_seconds": 0.013,
           "pause_after": "none",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.29,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 165120,
-          "samples": 162861
+          "samples": 162861,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 2.15
         }
       ],
       "segment_count": 2,
@@ -773,22 +826,34 @@
         "voice": "locale default",
         "speakers": false,
         "rate": true,
+        "pause_override": true,
         "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
         "clone": false,
         "hardware": "CPU",
+        "timeout_seconds": 60.0,
         "dependencies": [
           "espeak-ng"
         ],
         "software_license": "GPL-3.0-or-later",
         "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
+        "resources": "no neural weights; executable hard timeout 60s"
       },
       "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "b285e7cbc8d364e009e4065ee38bd64934263a76a5ed927f627b967a51200cf4",
+        "resumed_segments": 0,
+        "synthesized_segments": 2
+      },
       "validation": {
         "human_listening": "not_performed",
         "asr": "not_performed"
       },
-      "synth_seconds": 0.032,
+      "synth_seconds": 0.027,
       "rtf": 0.002,
       "peak_dbfs": -2.21,
       "segment_rms_std_db": 0.085,
@@ -800,7 +865,8 @@
         "peak_limit_dbfs": -1.0,
         "lexicon_entries": 0,
         "processing": "minimal",
-        "max_output_seconds": 1800
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
       },
       "warnings": []
     },
@@ -878,6 +944,7 @@
     "synthesis": {
       "ok": true,
       "direction": null,
+      "direction_validation": null,
       "engine": "espeak",
       "engine_info": "ok",
       "sample_rate": 22050,
@@ -889,25 +956,33 @@
           "index": 0,
           "text": "会議は十月十三日です。",
           "seconds": 7.488,
-          "synth_seconds": 0.018,
+          "synth_seconds": 0.014,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.46,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 0,
-          "samples": 165120
+          "samples": 165120,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 1.65
         },
         {
           "index": 1,
           "text": "東京から大阪まで移動します。",
           "seconds": 7.386,
-          "synth_seconds": 0.024,
+          "synth_seconds": 0.015,
           "pause_after": "none",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.29,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 165120,
-          "samples": 162861
+          "samples": 162861,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 2.15
         }
       ],
       "segment_count": 2,
@@ -1062,23 +1137,35 @@
         "voice": "locale default",
         "speakers": false,
         "rate": true,
+        "pause_override": true,
         "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
         "clone": false,
         "hardware": "CPU",
+        "timeout_seconds": 60.0,
         "dependencies": [
           "espeak-ng"
         ],
         "software_license": "GPL-3.0-or-later",
         "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
+        "resources": "no neural weights; executable hard timeout 60s"
       },
       "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "b285e7cbc8d364e009e4065ee38bd64934263a76a5ed927f627b967a51200cf4",
+        "resumed_segments": 0,
+        "synthesized_segments": 2
+      },
       "validation": {
         "human_listening": "not_performed",
         "asr": "not_performed"
       },
-      "synth_seconds": 0.042,
-      "rtf": 0.003,
+      "synth_seconds": 0.03,
+      "rtf": 0.002,
       "peak_dbfs": -2.21,
       "segment_rms_std_db": 0.085,
       "params": {
@@ -1089,7 +1176,8 @@
         "peak_limit_dbfs": -1.0,
         "lexicon_entries": 0,
         "processing": "minimal",
-        "max_output_seconds": 1800
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
       },
       "warnings": []
     },
@@ -1153,7 +1241,7 @@
         "detail": "静音区孤立尖峰数"
       }
     ],
-    "rtf": 0.003
+    "rtf": 0.002
   },
   {
     "id": "ja_names",
@@ -1167,6 +1255,7 @@
     "synthesis": {
       "ok": true,
       "direction": null,
+      "direction_validation": null,
       "engine": "espeak",
       "engine_info": "ok",
       "sample_rate": 22050,
@@ -1178,25 +1267,33 @@
           "index": 0,
           "text": "会議は十月十三日です。",
           "seconds": 7.488,
-          "synth_seconds": 0.022,
+          "synth_seconds": 0.014,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.46,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 0,
-          "samples": 165120
+          "samples": 165120,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 1.65
         },
         {
           "index": 1,
           "text": "東京から大阪まで移動します。",
           "seconds": 7.386,
-          "synth_seconds": 0.034,
+          "synth_seconds": 0.015,
           "pause_after": "none",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.29,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 165120,
-          "samples": 162861
+          "samples": 162861,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 2.15
         }
       ],
       "segment_count": 2,
@@ -1351,23 +1448,35 @@
         "voice": "locale default",
         "speakers": false,
         "rate": true,
+        "pause_override": true,
         "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
         "clone": false,
         "hardware": "CPU",
+        "timeout_seconds": 60.0,
         "dependencies": [
           "espeak-ng"
         ],
         "software_license": "GPL-3.0-or-later",
         "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
+        "resources": "no neural weights; executable hard timeout 60s"
       },
       "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "b285e7cbc8d364e009e4065ee38bd64934263a76a5ed927f627b967a51200cf4",
+        "resumed_segments": 0,
+        "synthesized_segments": 2
+      },
       "validation": {
         "human_listening": "not_performed",
         "asr": "not_performed"
       },
-      "synth_seconds": 0.056,
-      "rtf": 0.004,
+      "synth_seconds": 0.028,
+      "rtf": 0.002,
       "peak_dbfs": -2.21,
       "segment_rms_std_db": 0.085,
       "params": {
@@ -1378,7 +1487,8 @@
         "peak_limit_dbfs": -1.0,
         "lexicon_entries": 0,
         "processing": "minimal",
-        "max_output_seconds": 1800
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
       },
       "warnings": []
     },
@@ -1442,7 +1552,7 @@
         "detail": "静音区孤立尖峰数"
       }
     ],
-    "rtf": 0.004
+    "rtf": 0.002
   },
   {
     "id": "ja_names",
@@ -1456,6 +1566,7 @@
     "synthesis": {
       "ok": true,
       "direction": null,
+      "direction_validation": null,
       "engine": "espeak",
       "engine_info": "ok",
       "sample_rate": 22050,
@@ -1467,25 +1578,33 @@
           "index": 0,
           "text": "会議は十月十三日です。",
           "seconds": 7.488,
-          "synth_seconds": 0.029,
+          "synth_seconds": 0.014,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.46,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 0,
-          "samples": 165120
+          "samples": 165120,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 1.65
         },
         {
           "index": 1,
           "text": "東京から大阪まで移動します。",
           "seconds": 7.386,
-          "synth_seconds": 0.024,
+          "synth_seconds": 0.014,
           "pause_after": "none",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.29,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 165120,
-          "samples": 162861
+          "samples": 162861,
+          "active_seconds": 6.046,
+          "speech_rate_chars_per_s": 2.15
         }
       ],
       "segment_count": 2,
@@ -1640,23 +1759,35 @@
         "voice": "locale default",
         "speakers": false,
         "rate": true,
+        "pause_override": true,
         "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
         "clone": false,
         "hardware": "CPU",
+        "timeout_seconds": 60.0,
         "dependencies": [
           "espeak-ng"
         ],
         "software_license": "GPL-3.0-or-later",
         "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
+        "resources": "no neural weights; executable hard timeout 60s"
       },
       "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "b285e7cbc8d364e009e4065ee38bd64934263a76a5ed927f627b967a51200cf4",
+        "resumed_segments": 0,
+        "synthesized_segments": 2
+      },
       "validation": {
         "human_listening": "not_performed",
         "asr": "not_performed"
       },
-      "synth_seconds": 0.053,
-      "rtf": 0.004,
+      "synth_seconds": 0.029,
+      "rtf": 0.002,
       "peak_dbfs": -2.21,
       "segment_rms_std_db": 0.085,
       "params": {
@@ -1667,7 +1798,8 @@
         "peak_limit_dbfs": -1.0,
         "lexicon_entries": 0,
         "processing": "minimal",
-        "max_output_seconds": 1800
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
       },
       "warnings": []
     },
@@ -1731,6 +1863,6 @@
         "detail": "静音区孤立尖峰数"
       }
     ],
-    "rtf": 0.004
+    "rtf": 0.002
   }
 ]

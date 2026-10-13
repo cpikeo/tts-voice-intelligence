@@ -1,16 +1,72 @@
 {
   "ok": true,
   "direction": {
+    "context": "课程核心结论揭示段落，前文已完成背景铺垫",
     "intent": "让听众理解发现的后果，而非夸张播报",
     "audience": "课程学习者",
     "character": "同一位克制的讲解者",
+    "audible_goal": "关键结论句适度放慢语速并留出句尾消化停顿，保持同一音色与平稳动态",
+    "unsupported_capabilities": [
+      "emotion",
+      "emphasis",
+      "timbre_modulation"
+    ],
     "beats": [
       {
         "index": 0,
         "text": "This discovery changes everything.",
+        "context": "全篇转折句，首次提出颠覆性结论",
         "intent": "给新的关键结论消化时间",
-        "rationale": "语义发生转折，适度放慢；不承诺情绪或精细重音控制",
-        "length_scale": 1.3
+        "rationale": "语义发生转折，适度放慢语速并控制句后停顿；不承诺情绪或精细重音控制",
+        "audible_change": "语速放慢至约0.77倍（length_scale=1.3），句后停顿450ms",
+        "length_scale": 1.3,
+        "pause_after_ms": 450
+      }
+    ]
+  },
+  "direction_validation": {
+    "context": "课程核心结论揭示段落，前文已完成背景铺垫",
+    "intent": "让听众理解发现的后果，而非夸张播报",
+    "audience": "课程学习者",
+    "character": "同一位克制的讲解者",
+    "audible_goal": "关键结论句适度放慢语速并留出句尾消化停顿，保持同一音色与平稳动态",
+    "supported_controls": [
+      "length_scale",
+      "pause_after_ms"
+    ],
+    "unsupported_or_unverified": {
+      "emotion": "unsupported",
+      "emphasis": "unsupported",
+      "timbre_modulation": "unsupported",
+      "cross_segment_prosody_continuity": "unverified",
+      "human_perceptual_effect": "unverified_requires_human_listening"
+    },
+    "beats": [
+      {
+        "index": 0,
+        "context": "全篇转折句，首次提出颠覆性结论",
+        "intent": "给新的关键结论消化时间",
+        "rationale": "语义发生转折，适度放慢语速并控制句后停顿；不承诺情绪或精细重音控制",
+        "audible_change": "语速放慢至约0.77倍（length_scale=1.3），句后停顿450ms",
+        "applied_controls": {
+          "length_scale": 1.3,
+          "pause_after_ms": 450
+        },
+        "unsupported_controls": {
+          "emotion": "unsupported",
+          "emphasis": "unsupported",
+          "timbre_shift": "unsupported",
+          "cross_segment_hidden_state": "unsupported"
+        },
+        "measured": {
+          "duration_seconds": 2.838,
+          "active_seconds": 2.275,
+          "speech_rate_chars_per_s": 13.19,
+          "undirected_mean_rate_chars_per_s": null,
+          "pause_after_ms": 450.0
+        },
+        "signal_execution_verified": true,
+        "perceptual_verification": "unverified_requires_human_listening"
       }
     ]
   },
@@ -25,23 +81,56 @@
       "index": 0,
       "text": "This discovery changes everything.",
       "seconds": 2.838,
-      "synth_seconds": 0.022,
+      "synth_seconds": 0.014,
       "pause_after": "none",
+      "pause_after_ms": 450.0,
       "rms_dbfs": -20.63,
       "attempts": 1,
+      "resumed_from_checkpoint": false,
       "direction": {
         "index": 0,
         "text": "This discovery changes everything.",
+        "context": "全篇转折句，首次提出颠覆性结论",
         "intent": "给新的关键结论消化时间",
-        "rationale": "语义发生转折，适度放慢；不承诺情绪或精细重音控制",
-        "length_scale": 1.3
+        "rationale": "语义发生转折，适度放慢语速并控制句后停顿；不承诺情绪或精细重音控制",
+        "audible_change": "语速放慢至约0.77倍（length_scale=1.3），句后停顿450ms",
+        "length_scale": 1.3,
+        "pause_after_ms": 450
       },
       "start_sample": 0,
-      "samples": 62568
+      "samples": 62568,
+      "active_seconds": 2.275,
+      "speech_rate_chars_per_s": 13.19,
+      "direction_verification": {
+        "index": 0,
+        "context": "全篇转折句，首次提出颠覆性结论",
+        "intent": "给新的关键结论消化时间",
+        "rationale": "语义发生转折，适度放慢语速并控制句后停顿；不承诺情绪或精细重音控制",
+        "audible_change": "语速放慢至约0.77倍（length_scale=1.3），句后停顿450ms",
+        "applied_controls": {
+          "length_scale": 1.3,
+          "pause_after_ms": 450
+        },
+        "unsupported_controls": {
+          "emotion": "unsupported",
+          "emphasis": "unsupported",
+          "timbre_shift": "unsupported",
+          "cross_segment_hidden_state": "unsupported"
+        },
+        "measured": {
+          "duration_seconds": 2.838,
+          "active_seconds": 2.275,
+          "speech_rate_chars_per_s": 13.19,
+          "undirected_mean_rate_chars_per_s": null,
+          "pause_after_ms": 450.0
+        },
+        "signal_execution_verified": true,
+        "perceptual_verification": "unverified_requires_human_listening"
+      }
     }
   ],
   "segment_count": 1,
-  "duration_seconds": 2.838,
+  "duration_seconds": 3.288,
   "speech_seconds": 2.275,
   "segment_audio_seconds": 2.838,
   "language": "en-us",
@@ -192,23 +281,35 @@
     "voice": "locale default",
     "speakers": false,
     "rate": true,
+    "pause_override": true,
     "emotion": false,
+    "emphasis": false,
+    "timbre_shift": false,
     "clone": false,
     "hardware": "CPU",
+    "timeout_seconds": 60.0,
     "dependencies": [
       "espeak-ng"
     ],
     "software_license": "GPL-3.0-or-later",
     "model_license": "bundled voice data: verify distribution",
-    "resources": "no neural weights; executable timeout 60s"
+    "resources": "no neural weights; executable hard timeout 60s"
   },
   "authorization": null,
+  "bound_assets": null,
+  "checkpoint_recovery": {
+    "enabled": false,
+    "checkpoint_dir": null,
+    "plan_sha256": "8923c060ed8a642804bfef1e516cf187ea62aeb04bc823adb16c7b477baace19",
+    "resumed_segments": 0,
+    "synthesized_segments": 1
+  },
   "validation": {
     "human_listening": "not_performed",
     "asr": "not_performed"
   },
-  "synth_seconds": 0.022,
-  "rtf": 0.008,
+  "synth_seconds": 0.014,
+  "rtf": 0.004,
   "peak_dbfs": -1.94,
   "segment_rms_std_db": 0.0,
   "params": {
@@ -219,11 +320,12 @@
     "peak_limit_dbfs": -1.0,
     "lexicon_entries": 0,
     "processing": "minimal",
-    "max_output_seconds": 1800
+    "max_output_seconds": 1800,
+    "segment_timeout": 60.0
   },
   "warnings": [],
-  "created": "2026-10-13T02:08:36+00:00",
-  "skill_version": "0.3.0",
+  "created": "2026-10-13T02:50:07+00:00",
+  "skill_version": "0.4.0",
   "model": {
     "path": null,
     "exists": false
@@ -239,9 +341,12 @@
   },
   "engine_params": {
     "length_scale": 1.0,
-    "speed_wpm": 175
+    "speed_wpm": 175,
+    "timeout": 60.0
   },
   "output": "validation/direction.wav",
-  "output_sha256": "95a6b28f42c650209a00acd809d71ab9af638ed386237748136ff0d60f82742c",
-  "derived": []
+  "output_sha256": "cfa968fef4fe801ffa6cc95e69ff03a18c10afe4f3f29a9358b57ad88736d3ac",
+  "derived": [],
+  "derived_sha256": {},
+  "delivery_transaction": "atomic_group_committed"
 }

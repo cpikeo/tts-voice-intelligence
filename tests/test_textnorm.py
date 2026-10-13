@@ -44,6 +44,9 @@ def test_int_zh(n, expected):
     # 编号/型号：逐位读，不做数值读法
     ("订单号A-1024已完成", "订单号A-一零二四已完成"),
     ("升级到GPT-4", "升级到GPT-四"),
+    ("编号001024请逐位核对", "编号零零一零二四请逐位核对"),
+    ("2026年08月05日", "二零二六年八月五日"),
+    ("10月12号", "十月十二号"),
 ])
 def test_normalize(src, expected):
     assert normalize_zh(src) == expected
@@ -53,6 +56,7 @@ def test_lexicon_reading_form_is_final():
     """词典给出的朗读形式不得被后续数字规则二次改写。"""
     assert normalize_zh("见版本三", [("版本三", "v3")]) == "见v3"
     assert normalize_zh("Python 3.13 发布", [("Python", "派森")]) == "派森 三点一三 发布"
+    assert normalize_zh("ＧＰＵ加速", [("GPU", "吉皮优")]) == "吉皮优加速"
 
 
 def test_mask_numbers_is_symmetric():

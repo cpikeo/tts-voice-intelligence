@@ -147,15 +147,19 @@
     "voice": "locale default",
     "speakers": false,
     "rate": true,
+    "pause_override": true,
     "emotion": false,
+    "emphasis": false,
+    "timbre_shift": false,
     "clone": false,
     "hardware": "CPU",
+    "timeout_seconds": 60.0,
     "dependencies": [
       "espeak-ng"
     ],
     "software_license": "GPL-3.0-or-later",
     "model_license": "bundled voice data: verify distribution",
-    "resources": "no neural weights; executable timeout 60s"
+    "resources": "no neural weights; executable hard timeout 60s"
   },
   "model": {
     "path": null,
@@ -170,8 +174,8 @@
   "asr_model": null,
   "repeat": 3,
   "seed": 7,
-  "skill_version": "0.3.0",
-  "peak_rss_mb": 42.7890625,
+  "skill_version": "0.4.0",
+  "peak_rss_mb": 44.19921875,
   "human_listening": "not_performed",
   "skipped": [
     {
@@ -253,13 +257,15 @@
       "category": "German numbers",
       "norm": {
         "rtf": {
-          "mean": 0.0043,
-          "min": 0.004,
-          "max": 0.005,
+          "mean": 0.0037,
+          "min": 0.003,
+          "max": 0.004,
           "n": 3,
           "std": 0.0005773502691896258
         },
         "cer": null,
+        "cer_text": null,
+        "num_cer": null,
         "errors": [],
         "asr_status": [
           "not_requested",
@@ -269,13 +275,15 @@
       },
       "raw": {
         "rtf": {
-          "mean": 0.004,
-          "min": 0.004,
+          "mean": 0.0033,
+          "min": 0.003,
           "max": 0.004,
           "n": 3,
-          "std": 0.0
+          "std": 0.0005773502691896258
         },
         "cer": null,
+        "cer_text": null,
+        "num_cer": null,
         "errors": [],
         "asr_status": [
           "not_requested",
@@ -298,6 +306,7 @@
       "synthesis": {
         "ok": true,
         "direction": null,
+        "direction_validation": null,
         "engine": "espeak",
         "engine_info": "ok",
         "sample_rate": 22050,
@@ -309,37 +318,49 @@
             "index": 0,
             "text": "Der Termin ist am 13.",
             "seconds": 1.7,
-            "synth_seconds": 0.014,
+            "synth_seconds": 0.011,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.06,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 0,
-            "samples": 37487
+            "samples": 37487,
+            "active_seconds": 1.267,
+            "speech_rate_chars_per_s": 12.63
           },
           {
             "index": 1,
             "text": "Oktober 2026.",
             "seconds": 2.693,
-            "synth_seconds": 0.011,
+            "synth_seconds": 0.009,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.02,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 37487,
-            "samples": 59370
+            "samples": 59370,
+            "active_seconds": 2.065,
+            "speech_rate_chars_per_s": 5.33
           },
           {
             "index": 2,
             "text": "Die Temperatur beträgt minus fünf Grad.",
             "seconds": 2.551,
-            "synth_seconds": 0.011,
+            "synth_seconds": 0.009,
             "pause_after": "none",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.68,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 96857,
-            "samples": 56255
+            "samples": 56255,
+            "active_seconds": 1.926,
+            "speech_rate_chars_per_s": 17.14
           }
         ],
         "segment_count": 3,
@@ -494,23 +515,35 @@
           "voice": "locale default",
           "speakers": false,
           "rate": true,
+          "pause_override": true,
           "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
           "clone": false,
           "hardware": "CPU",
+          "timeout_seconds": 60.0,
           "dependencies": [
             "espeak-ng"
           ],
           "software_license": "GPL-3.0-or-later",
           "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
+          "resources": "no neural weights; executable hard timeout 60s"
         },
         "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "95712e56cb7f985ac4bf92111a284a4f35a7a5237bfbcc82b928100f648a92a9",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
         "validation": {
           "human_listening": "not_performed",
           "asr": "not_performed"
         },
-        "synth_seconds": 0.036,
-        "rtf": 0.005,
+        "synth_seconds": 0.03,
+        "rtf": 0.004,
         "peak_dbfs": -1.0,
         "segment_rms_std_db": 0.302,
         "params": {
@@ -521,310 +554,8 @@
           "peak_limit_dbfs": -1.0,
           "lexicon_entries": 0,
           "processing": "minimal",
-          "max_output_seconds": 1800
-        },
-        "warnings": [
-          "峰值 -0.2 dBFS 超过上限，已整体衰减到 -1.0 dBFS"
-        ]
-      },
-      "signal": [
-        {
-          "name": "format",
-          "status": "pass",
-          "value": {
-            "sr": 22050,
-            "channels": 1,
-            "subtype": "PCM_24"
-          },
-          "detail": ""
-        },
-        {
-          "name": "duration",
-          "status": "pass",
-          "value": 6.944,
-          "detail": ""
-        },
-        {
-          "name": "clipping",
-          "status": "pass",
-          "value": 0.0,
-          "detail": "削波采样比例"
-        },
-        {
-          "name": "peak",
-          "status": "pass",
-          "value": -1.0,
-          "detail": "峰值 dBFS"
-        },
-        {
-          "name": "dc_offset",
-          "status": "pass",
-          "value": 0.00126,
-          "detail": ""
-        },
-        {
-          "name": "active_signal_seconds",
-          "status": "info",
-          "value": 5.2481,
-          "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
-        },
-        {
-          "name": "loudness_rms",
-          "status": "pass",
-          "value": -21.25,
-          "detail": "有声段 RMS dBFS，目标约 -20"
-        },
-        {
-          "name": "internal_silence",
-          "status": "pass",
-          "value": 0.3,
-          "detail": "最长内部静音（秒），起点 4.11s"
-        },
-        {
-          "name": "clicks_in_silence",
-          "status": "pass",
-          "value": 0,
-          "detail": "静音区孤立尖峰数"
-        }
-      ],
-      "rtf": 0.005
-    },
-    {
-      "id": "de_numbers",
-      "category": "German numbers",
-      "arm": "raw",
-      "repeat": 0,
-      "source_text": "Der Termin ist am 13. Oktober 2026. Die Temperatur beträgt minus fünf Grad.",
-      "language": "de",
-      "wav": "validation/espeak-de/de_numbers.raw.r0.wav",
-      "sha256": "b99cdc8a00d0f624291a41eee03aa0a8591564a08623945fe7e917c4aec28dfe",
-      "synthesis": {
-        "ok": true,
-        "direction": null,
-        "engine": "espeak",
-        "engine_info": "ok",
-        "sample_rate": 22050,
-        "normalized": false,
-        "original_text": "Der Termin ist am 13. Oktober 2026. Die Temperatur beträgt minus fünf Grad.",
-        "normalized_text": "Der Termin ist am 13. Oktober 2026. Die Temperatur beträgt minus fünf Grad.",
-        "segments": [
-          {
-            "index": 0,
-            "text": "Der Termin ist am 13.",
-            "seconds": 1.7,
-            "synth_seconds": 0.009,
-            "pause_after": "sentence",
-            "rms_dbfs": -21.06,
-            "attempts": 1,
-            "direction": {},
-            "start_sample": 0,
-            "samples": 37487
-          },
-          {
-            "index": 1,
-            "text": "Oktober 2026.",
-            "seconds": 2.693,
-            "synth_seconds": 0.01,
-            "pause_after": "sentence",
-            "rms_dbfs": -21.02,
-            "attempts": 1,
-            "direction": {},
-            "start_sample": 37487,
-            "samples": 59370
-          },
-          {
-            "index": 2,
-            "text": "Die Temperatur beträgt minus fünf Grad.",
-            "seconds": 2.551,
-            "synth_seconds": 0.01,
-            "pause_after": "none",
-            "rms_dbfs": -21.68,
-            "attempts": 1,
-            "direction": {},
-            "start_sample": 96857,
-            "samples": 56255
-          }
-        ],
-        "segment_count": 3,
-        "duration_seconds": 6.944,
-        "speech_seconds": 5.248,
-        "segment_audio_seconds": 6.944,
-        "language": "de",
-        "capabilities": {
-          "languages": [
-            "af",
-            "am",
-            "an",
-            "ar",
-            "as",
-            "az",
-            "ba",
-            "be",
-            "bg",
-            "bn",
-            "bpy",
-            "bs",
-            "ca",
-            "ca-ba",
-            "ca-nw",
-            "ca-va",
-            "chr-US-Qaaa-x-west",
-            "cmn",
-            "cmn-latn-pinyin",
-            "cs",
-            "cv",
-            "cy",
-            "da",
-            "de",
-            "el",
-            "en-029",
-            "en-gb",
-            "en-gb-scotland",
-            "en-gb-x-gbclan",
-            "en-gb-x-gbcwmd",
-            "en-gb-x-rp",
-            "en-shaw",
-            "en-us",
-            "en-us-nyc",
-            "eo",
-            "es",
-            "es-419",
-            "et",
-            "eu",
-            "fa",
-            "fa-latn",
-            "fi",
-            "fo",
-            "fr-be",
-            "fr-ch",
-            "fr-fr",
-            "ga",
-            "gd",
-            "gn",
-            "grc",
-            "gu",
-            "hak",
-            "haw",
-            "he",
-            "hi",
-            "hr",
-            "ht",
-            "hu",
-            "hy",
-            "hyw",
-            "ia",
-            "id",
-            "io",
-            "is",
-            "it",
-            "ja",
-            "jbo",
-            "ka",
-            "kaa",
-            "kk",
-            "kl",
-            "kn",
-            "ko",
-            "kok",
-            "ku",
-            "ky",
-            "la",
-            "lb",
-            "lfn",
-            "lt",
-            "ltg",
-            "lv",
-            "mi",
-            "mk",
-            "ml",
-            "mr",
-            "ms",
-            "mt",
-            "mto",
-            "my",
-            "nb",
-            "nci",
-            "ne",
-            "nl",
-            "nog",
-            "om",
-            "or",
-            "pa",
-            "pap",
-            "piqd",
-            "pl",
-            "pt",
-            "pt-br",
-            "py",
-            "qdb",
-            "qu",
-            "quc",
-            "qya",
-            "ro",
-            "ru",
-            "ru-cl",
-            "ru-lv",
-            "sd",
-            "shn",
-            "si",
-            "sjn",
-            "sk",
-            "sl",
-            "smj",
-            "sq",
-            "sr",
-            "sv",
-            "sw",
-            "ta",
-            "te",
-            "th",
-            "ti",
-            "tk",
-            "tn",
-            "tr",
-            "tt",
-            "ug",
-            "uk",
-            "ur",
-            "uz",
-            "vi",
-            "vi-vn-x-central",
-            "vi-vn-x-south",
-            "xex",
-            "yue"
-          ],
-          "selected_language": "de",
-          "voice": "locale default",
-          "speakers": false,
-          "rate": true,
-          "emotion": false,
-          "clone": false,
-          "hardware": "CPU",
-          "dependencies": [
-            "espeak-ng"
-          ],
-          "software_license": "GPL-3.0-or-later",
-          "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
-        },
-        "authorization": null,
-        "validation": {
-          "human_listening": "not_performed",
-          "asr": "not_performed"
-        },
-        "synth_seconds": 0.029,
-        "rtf": 0.004,
-        "peak_dbfs": -1.0,
-        "segment_rms_std_db": 0.302,
-        "params": {
-          "normalize": false,
-          "max_chars": 90,
-          "target_db": null,
-          "pause_ms": {},
-          "peak_limit_dbfs": -1.0,
-          "lexicon_entries": 0,
-          "processing": "minimal",
-          "max_output_seconds": 1800
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
         },
         "warnings": [
           "峰值 -0.2 dBFS 超过上限，已整体衰减到 -1.0 dBFS"
@@ -896,14 +627,15 @@
       "id": "de_numbers",
       "category": "German numbers",
       "arm": "raw",
-      "repeat": 1,
+      "repeat": 0,
       "source_text": "Der Termin ist am 13. Oktober 2026. Die Temperatur beträgt minus fünf Grad.",
       "language": "de",
-      "wav": "validation/espeak-de/de_numbers.raw.r1.wav",
+      "wav": "validation/espeak-de/de_numbers.raw.r0.wav",
       "sha256": "b99cdc8a00d0f624291a41eee03aa0a8591564a08623945fe7e917c4aec28dfe",
       "synthesis": {
         "ok": true,
         "direction": null,
+        "direction_validation": null,
         "engine": "espeak",
         "engine_info": "ok",
         "sample_rate": 22050,
@@ -915,37 +647,49 @@
             "index": 0,
             "text": "Der Termin ist am 13.",
             "seconds": 1.7,
-            "synth_seconds": 0.009,
+            "synth_seconds": 0.008,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.06,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 0,
-            "samples": 37487
+            "samples": 37487,
+            "active_seconds": 1.267,
+            "speech_rate_chars_per_s": 12.63
           },
           {
             "index": 1,
             "text": "Oktober 2026.",
             "seconds": 2.693,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.008,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.02,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 37487,
-            "samples": 59370
+            "samples": 59370,
+            "active_seconds": 2.065,
+            "speech_rate_chars_per_s": 5.33
           },
           {
             "index": 2,
             "text": "Die Temperatur beträgt minus fünf Grad.",
             "seconds": 2.551,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.008,
             "pause_after": "none",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.68,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 96857,
-            "samples": 56255
+            "samples": 56255,
+            "active_seconds": 1.926,
+            "speech_rate_chars_per_s": 17.14
           }
         ],
         "segment_count": 3,
@@ -1100,22 +844,363 @@
           "voice": "locale default",
           "speakers": false,
           "rate": true,
+          "pause_override": true,
           "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
           "clone": false,
           "hardware": "CPU",
+          "timeout_seconds": 60.0,
           "dependencies": [
             "espeak-ng"
           ],
           "software_license": "GPL-3.0-or-later",
           "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
+          "resources": "no neural weights; executable hard timeout 60s"
         },
         "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "95712e56cb7f985ac4bf92111a284a4f35a7a5237bfbcc82b928100f648a92a9",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
         "validation": {
           "human_listening": "not_performed",
           "asr": "not_performed"
         },
-        "synth_seconds": 0.029,
+        "synth_seconds": 0.024,
+        "rtf": 0.003,
+        "peak_dbfs": -1.0,
+        "segment_rms_std_db": 0.302,
+        "params": {
+          "normalize": false,
+          "max_chars": 90,
+          "target_db": null,
+          "pause_ms": {},
+          "peak_limit_dbfs": -1.0,
+          "lexicon_entries": 0,
+          "processing": "minimal",
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
+        },
+        "warnings": [
+          "峰值 -0.2 dBFS 超过上限，已整体衰减到 -1.0 dBFS"
+        ]
+      },
+      "signal": [
+        {
+          "name": "format",
+          "status": "pass",
+          "value": {
+            "sr": 22050,
+            "channels": 1,
+            "subtype": "PCM_24"
+          },
+          "detail": ""
+        },
+        {
+          "name": "duration",
+          "status": "pass",
+          "value": 6.944,
+          "detail": ""
+        },
+        {
+          "name": "clipping",
+          "status": "pass",
+          "value": 0.0,
+          "detail": "削波采样比例"
+        },
+        {
+          "name": "peak",
+          "status": "pass",
+          "value": -1.0,
+          "detail": "峰值 dBFS"
+        },
+        {
+          "name": "dc_offset",
+          "status": "pass",
+          "value": 0.00126,
+          "detail": ""
+        },
+        {
+          "name": "active_signal_seconds",
+          "status": "info",
+          "value": 5.2481,
+          "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+        },
+        {
+          "name": "loudness_rms",
+          "status": "pass",
+          "value": -21.25,
+          "detail": "有声段 RMS dBFS，目标约 -20"
+        },
+        {
+          "name": "internal_silence",
+          "status": "pass",
+          "value": 0.3,
+          "detail": "最长内部静音（秒），起点 4.11s"
+        },
+        {
+          "name": "clicks_in_silence",
+          "status": "pass",
+          "value": 0,
+          "detail": "静音区孤立尖峰数"
+        }
+      ],
+      "rtf": 0.003
+    },
+    {
+      "id": "de_numbers",
+      "category": "German numbers",
+      "arm": "raw",
+      "repeat": 1,
+      "source_text": "Der Termin ist am 13. Oktober 2026. Die Temperatur beträgt minus fünf Grad.",
+      "language": "de",
+      "wav": "validation/espeak-de/de_numbers.raw.r1.wav",
+      "sha256": "b99cdc8a00d0f624291a41eee03aa0a8591564a08623945fe7e917c4aec28dfe",
+      "synthesis": {
+        "ok": true,
+        "direction": null,
+        "direction_validation": null,
+        "engine": "espeak",
+        "engine_info": "ok",
+        "sample_rate": 22050,
+        "normalized": false,
+        "original_text": "Der Termin ist am 13. Oktober 2026. Die Temperatur beträgt minus fünf Grad.",
+        "normalized_text": "Der Termin ist am 13. Oktober 2026. Die Temperatur beträgt minus fünf Grad.",
+        "segments": [
+          {
+            "index": 0,
+            "text": "Der Termin ist am 13.",
+            "seconds": 1.7,
+            "synth_seconds": 0.008,
+            "pause_after": "sentence",
+            "pause_after_ms": 0.0,
+            "rms_dbfs": -21.06,
+            "attempts": 1,
+            "resumed_from_checkpoint": false,
+            "direction": {},
+            "start_sample": 0,
+            "samples": 37487,
+            "active_seconds": 1.267,
+            "speech_rate_chars_per_s": 12.63
+          },
+          {
+            "index": 1,
+            "text": "Oktober 2026.",
+            "seconds": 2.693,
+            "synth_seconds": 0.008,
+            "pause_after": "sentence",
+            "pause_after_ms": 0.0,
+            "rms_dbfs": -21.02,
+            "attempts": 1,
+            "resumed_from_checkpoint": false,
+            "direction": {},
+            "start_sample": 37487,
+            "samples": 59370,
+            "active_seconds": 2.065,
+            "speech_rate_chars_per_s": 5.33
+          },
+          {
+            "index": 2,
+            "text": "Die Temperatur beträgt minus fünf Grad.",
+            "seconds": 2.551,
+            "synth_seconds": 0.01,
+            "pause_after": "none",
+            "pause_after_ms": 0.0,
+            "rms_dbfs": -21.68,
+            "attempts": 1,
+            "resumed_from_checkpoint": false,
+            "direction": {},
+            "start_sample": 96857,
+            "samples": 56255,
+            "active_seconds": 1.926,
+            "speech_rate_chars_per_s": 17.14
+          }
+        ],
+        "segment_count": 3,
+        "duration_seconds": 6.944,
+        "speech_seconds": 5.248,
+        "segment_audio_seconds": 6.944,
+        "language": "de",
+        "capabilities": {
+          "languages": [
+            "af",
+            "am",
+            "an",
+            "ar",
+            "as",
+            "az",
+            "ba",
+            "be",
+            "bg",
+            "bn",
+            "bpy",
+            "bs",
+            "ca",
+            "ca-ba",
+            "ca-nw",
+            "ca-va",
+            "chr-US-Qaaa-x-west",
+            "cmn",
+            "cmn-latn-pinyin",
+            "cs",
+            "cv",
+            "cy",
+            "da",
+            "de",
+            "el",
+            "en-029",
+            "en-gb",
+            "en-gb-scotland",
+            "en-gb-x-gbclan",
+            "en-gb-x-gbcwmd",
+            "en-gb-x-rp",
+            "en-shaw",
+            "en-us",
+            "en-us-nyc",
+            "eo",
+            "es",
+            "es-419",
+            "et",
+            "eu",
+            "fa",
+            "fa-latn",
+            "fi",
+            "fo",
+            "fr-be",
+            "fr-ch",
+            "fr-fr",
+            "ga",
+            "gd",
+            "gn",
+            "grc",
+            "gu",
+            "hak",
+            "haw",
+            "he",
+            "hi",
+            "hr",
+            "ht",
+            "hu",
+            "hy",
+            "hyw",
+            "ia",
+            "id",
+            "io",
+            "is",
+            "it",
+            "ja",
+            "jbo",
+            "ka",
+            "kaa",
+            "kk",
+            "kl",
+            "kn",
+            "ko",
+            "kok",
+            "ku",
+            "ky",
+            "la",
+            "lb",
+            "lfn",
+            "lt",
+            "ltg",
+            "lv",
+            "mi",
+            "mk",
+            "ml",
+            "mr",
+            "ms",
+            "mt",
+            "mto",
+            "my",
+            "nb",
+            "nci",
+            "ne",
+            "nl",
+            "nog",
+            "om",
+            "or",
+            "pa",
+            "pap",
+            "piqd",
+            "pl",
+            "pt",
+            "pt-br",
+            "py",
+            "qdb",
+            "qu",
+            "quc",
+            "qya",
+            "ro",
+            "ru",
+            "ru-cl",
+            "ru-lv",
+            "sd",
+            "shn",
+            "si",
+            "sjn",
+            "sk",
+            "sl",
+            "smj",
+            "sq",
+            "sr",
+            "sv",
+            "sw",
+            "ta",
+            "te",
+            "th",
+            "ti",
+            "tk",
+            "tn",
+            "tr",
+            "tt",
+            "ug",
+            "uk",
+            "ur",
+            "uz",
+            "vi",
+            "vi-vn-x-central",
+            "vi-vn-x-south",
+            "xex",
+            "yue"
+          ],
+          "selected_language": "de",
+          "voice": "locale default",
+          "speakers": false,
+          "rate": true,
+          "pause_override": true,
+          "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
+          "clone": false,
+          "hardware": "CPU",
+          "timeout_seconds": 60.0,
+          "dependencies": [
+            "espeak-ng"
+          ],
+          "software_license": "GPL-3.0-or-later",
+          "model_license": "bundled voice data: verify distribution",
+          "resources": "no neural weights; executable hard timeout 60s"
+        },
+        "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "95712e56cb7f985ac4bf92111a284a4f35a7a5237bfbcc82b928100f648a92a9",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
+        "validation": {
+          "human_listening": "not_performed",
+          "asr": "not_performed"
+        },
+        "synth_seconds": 0.026,
         "rtf": 0.004,
         "peak_dbfs": -1.0,
         "segment_rms_std_db": 0.302,
@@ -1127,7 +1212,8 @@
           "peak_limit_dbfs": -1.0,
           "lexicon_entries": 0,
           "processing": "minimal",
-          "max_output_seconds": 1800
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
         },
         "warnings": [
           "峰值 -0.2 dBFS 超过上限，已整体衰减到 -1.0 dBFS"
@@ -1207,6 +1293,7 @@
       "synthesis": {
         "ok": true,
         "direction": null,
+        "direction_validation": null,
         "engine": "espeak",
         "engine_info": "ok",
         "sample_rate": 22050,
@@ -1218,37 +1305,49 @@
             "index": 0,
             "text": "Der Termin ist am 13.",
             "seconds": 1.7,
-            "synth_seconds": 0.009,
+            "synth_seconds": 0.008,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.06,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 0,
-            "samples": 37487
+            "samples": 37487,
+            "active_seconds": 1.267,
+            "speech_rate_chars_per_s": 12.63
           },
           {
             "index": 1,
             "text": "Oktober 2026.",
             "seconds": 2.693,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.009,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.02,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 37487,
-            "samples": 59370
+            "samples": 59370,
+            "active_seconds": 2.065,
+            "speech_rate_chars_per_s": 5.33
           },
           {
             "index": 2,
             "text": "Die Temperatur beträgt minus fünf Grad.",
             "seconds": 2.551,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.009,
             "pause_after": "none",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.68,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 96857,
-            "samples": 56255
+            "samples": 56255,
+            "active_seconds": 1.926,
+            "speech_rate_chars_per_s": 17.14
           }
         ],
         "segment_count": 3,
@@ -1403,22 +1502,34 @@
           "voice": "locale default",
           "speakers": false,
           "rate": true,
+          "pause_override": true,
           "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
           "clone": false,
           "hardware": "CPU",
+          "timeout_seconds": 60.0,
           "dependencies": [
             "espeak-ng"
           ],
           "software_license": "GPL-3.0-or-later",
           "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
+          "resources": "no neural weights; executable hard timeout 60s"
         },
         "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "95712e56cb7f985ac4bf92111a284a4f35a7a5237bfbcc82b928100f648a92a9",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
         "validation": {
           "human_listening": "not_performed",
           "asr": "not_performed"
         },
-        "synth_seconds": 0.029,
+        "synth_seconds": 0.026,
         "rtf": 0.004,
         "peak_dbfs": -1.0,
         "segment_rms_std_db": 0.302,
@@ -1430,7 +1541,8 @@
           "peak_limit_dbfs": -1.0,
           "lexicon_entries": 0,
           "processing": "minimal",
-          "max_output_seconds": 1800
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
         },
         "warnings": [
           "峰值 -0.2 dBFS 超过上限，已整体衰减到 -1.0 dBFS"
@@ -1510,6 +1622,7 @@
       "synthesis": {
         "ok": true,
         "direction": null,
+        "direction_validation": null,
         "engine": "espeak",
         "engine_info": "ok",
         "sample_rate": 22050,
@@ -1521,37 +1634,49 @@
             "index": 0,
             "text": "Der Termin ist am 13.",
             "seconds": 1.7,
-            "synth_seconds": 0.009,
+            "synth_seconds": 0.008,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.06,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 0,
-            "samples": 37487
+            "samples": 37487,
+            "active_seconds": 1.267,
+            "speech_rate_chars_per_s": 12.63
           },
           {
             "index": 1,
             "text": "Oktober 2026.",
             "seconds": 2.693,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.008,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.02,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 37487,
-            "samples": 59370
+            "samples": 59370,
+            "active_seconds": 2.065,
+            "speech_rate_chars_per_s": 5.33
           },
           {
             "index": 2,
             "text": "Die Temperatur beträgt minus fünf Grad.",
             "seconds": 2.551,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.007,
             "pause_after": "none",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.68,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 96857,
-            "samples": 56255
+            "samples": 56255,
+            "active_seconds": 1.926,
+            "speech_rate_chars_per_s": 17.14
           }
         ],
         "segment_count": 3,
@@ -1706,23 +1831,35 @@
           "voice": "locale default",
           "speakers": false,
           "rate": true,
+          "pause_override": true,
           "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
           "clone": false,
           "hardware": "CPU",
+          "timeout_seconds": 60.0,
           "dependencies": [
             "espeak-ng"
           ],
           "software_license": "GPL-3.0-or-later",
           "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
+          "resources": "no neural weights; executable hard timeout 60s"
         },
         "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "95712e56cb7f985ac4bf92111a284a4f35a7a5237bfbcc82b928100f648a92a9",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
         "validation": {
           "human_listening": "not_performed",
           "asr": "not_performed"
         },
-        "synth_seconds": 0.029,
-        "rtf": 0.004,
+        "synth_seconds": 0.023,
+        "rtf": 0.003,
         "peak_dbfs": -1.0,
         "segment_rms_std_db": 0.302,
         "params": {
@@ -1733,7 +1870,8 @@
           "peak_limit_dbfs": -1.0,
           "lexicon_entries": 0,
           "processing": "minimal",
-          "max_output_seconds": 1800
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
         },
         "warnings": [
           "峰值 -0.2 dBFS 超过上限，已整体衰减到 -1.0 dBFS"
@@ -1799,7 +1937,7 @@
           "detail": "静音区孤立尖峰数"
         }
       ],
-      "rtf": 0.004
+      "rtf": 0.003
     },
     {
       "id": "de_numbers",
@@ -1813,6 +1951,7 @@
       "synthesis": {
         "ok": true,
         "direction": null,
+        "direction_validation": null,
         "engine": "espeak",
         "engine_info": "ok",
         "sample_rate": 22050,
@@ -1824,37 +1963,49 @@
             "index": 0,
             "text": "Der Termin ist am 13.",
             "seconds": 1.7,
-            "synth_seconds": 0.009,
+            "synth_seconds": 0.007,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.06,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 0,
-            "samples": 37487
+            "samples": 37487,
+            "active_seconds": 1.267,
+            "speech_rate_chars_per_s": 12.63
           },
           {
             "index": 1,
             "text": "Oktober 2026.",
             "seconds": 2.693,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.008,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.02,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 37487,
-            "samples": 59370
+            "samples": 59370,
+            "active_seconds": 2.065,
+            "speech_rate_chars_per_s": 5.33
           },
           {
             "index": 2,
             "text": "Die Temperatur beträgt minus fünf Grad.",
             "seconds": 2.551,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.009,
             "pause_after": "none",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -21.68,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 96857,
-            "samples": 56255
+            "samples": 56255,
+            "active_seconds": 1.926,
+            "speech_rate_chars_per_s": 17.14
           }
         ],
         "segment_count": 3,
@@ -2009,23 +2160,35 @@
           "voice": "locale default",
           "speakers": false,
           "rate": true,
+          "pause_override": true,
           "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
           "clone": false,
           "hardware": "CPU",
+          "timeout_seconds": 60.0,
           "dependencies": [
             "espeak-ng"
           ],
           "software_license": "GPL-3.0-or-later",
           "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
+          "resources": "no neural weights; executable hard timeout 60s"
         },
         "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "95712e56cb7f985ac4bf92111a284a4f35a7a5237bfbcc82b928100f648a92a9",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
         "validation": {
           "human_listening": "not_performed",
           "asr": "not_performed"
         },
-        "synth_seconds": 0.028,
-        "rtf": 0.004,
+        "synth_seconds": 0.024,
+        "rtf": 0.003,
         "peak_dbfs": -1.0,
         "segment_rms_std_db": 0.302,
         "params": {
@@ -2036,7 +2199,8 @@
           "peak_limit_dbfs": -1.0,
           "lexicon_entries": 0,
           "processing": "minimal",
-          "max_output_seconds": 1800
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
         },
         "warnings": [
           "峰值 -0.2 dBFS 超过上限，已整体衰减到 -1.0 dBFS"
@@ -2102,17 +2266,17 @@
           "detail": "静音区孤立尖峰数"
         }
       ],
-      "rtf": 0.004
+      "rtf": 0.003
     }
   ],
   "evidence_type": "current_objective_run",
   "source_sha256": {
-    "scripts/blindtest.py": "1ce327a084b55fb1617ca57ead3cb132bfd061f32c9c7af9a24ea466b92875fa",
-    "scripts/engines.py": "f9bcd0ec6d3d42fe662512755794784e89375b943a8c358eeea688ecd828bbe9",
-    "scripts/qa.py": "1ac42000e26ab316aacb2b01618fb7ed8c507bf8a630747bb7d8d005d3f5d557",
-    "scripts/textnorm.py": "15ad3f6737fdf31c587b98f2ea86e0a913e236851407777ca5407d1b1a4b74ae",
-    "scripts/tts.py": "22bddc248cdc70539f83dab64cea8d0524500390d01aed99a2ab97e58b040bde",
+    "scripts/blindtest.py": "129a0ee704c762f28aef59eb8b039ae286e6f598571097fb33b3421fb9449fb4",
+    "scripts/engines.py": "07e340f61d6db77bd297aadee7199c2e5b11e48be9b99bfdb8cd97b6fd4c60e2",
+    "scripts/qa.py": "19c2e4a611c05f40c685fa9b0a90e772c812b93047b793a21816f7d1e4628272",
+    "scripts/textnorm.py": "37944582a8787fbe39306f6797a885810353fd574bad7e7a241354be671178fa",
+    "scripts/tts.py": "eb3748fbcaae8db3a04fa1ef9142022a0a85a37a3c656beb2324d3271fcdc396",
     "tests/cases.jsonl": "266e60ef8504c64b1f141204e33a94e15dd1ba7d0b669a9dc2186ceeb215501c",
-    "tests/run_eval.py": "c0f59e7127ef271c7cecbaf9187dc6b5c837ea26cb7337b5c94123069716dc00"
+    "tests/run_eval.py": "6df5f9b0ad61dd3b7eae313f8b32c69aa8688de6d5ed6994cb28c627c853a260"
   }
 }

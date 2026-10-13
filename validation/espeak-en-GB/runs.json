@@ -11,6 +11,7 @@
     "synthesis": {
       "ok": true,
       "direction": null,
+      "direction_validation": null,
       "engine": "espeak",
       "engine_info": "ok",
       "sample_rate": 22050,
@@ -22,13 +23,17 @@
           "index": 0,
           "text": "You finished already?",
           "seconds": 1.302,
-          "synth_seconds": 0.013,
+          "synth_seconds": 0.012,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.41,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 0,
-          "samples": 28706
+          "samples": 28706,
+          "active_seconds": 0.988,
+          "speech_rate_chars_per_s": 18.22
         },
         {
           "index": 1,
@@ -36,23 +41,31 @@
           "seconds": 1.79,
           "synth_seconds": 0.01,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.05,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 28706,
-          "samples": 39461
+          "samples": 39461,
+          "active_seconds": 1.467,
+          "speech_rate_chars_per_s": 18.41
         },
         {
           "index": 2,
           "text": "Thank you, that changes everything.",
           "seconds": 2.348,
-          "synth_seconds": 0.015,
+          "synth_seconds": 0.011,
           "pause_after": "none",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -20.86,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 68167,
-          "samples": 51766
+          "samples": 51766,
+          "active_seconds": 1.756,
+          "speech_rate_chars_per_s": 16.51
         }
       ],
       "segment_count": 3,
@@ -207,23 +220,35 @@
         "voice": "locale default",
         "speakers": false,
         "rate": true,
+        "pause_override": true,
         "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
         "clone": false,
         "hardware": "CPU",
+        "timeout_seconds": 60.0,
         "dependencies": [
           "espeak-ng"
         ],
         "software_license": "GPL-3.0-or-later",
         "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
+        "resources": "no neural weights; executable hard timeout 60s"
       },
       "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "ac8db09e06c04249945d2f81575278a620c410d6fff3c89310565a8b6c4982be",
+        "resumed_segments": 0,
+        "synthesized_segments": 3
+      },
       "validation": {
         "human_listening": "not_performed",
         "asr": "not_performed"
       },
-      "synth_seconds": 0.038,
-      "rtf": 0.007,
+      "synth_seconds": 0.032,
+      "rtf": 0.006,
       "peak_dbfs": -2.3,
       "segment_rms_std_db": 0.782,
       "params": {
@@ -234,7 +259,8 @@
         "peak_limit_dbfs": -1.0,
         "lexicon_entries": 0,
         "processing": "minimal",
-        "max_output_seconds": 1800
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
       },
       "warnings": []
     },
@@ -298,7 +324,7 @@
         "detail": "静音区孤立尖峰数"
       }
     ],
-    "rtf": 0.007
+    "rtf": 0.006
   },
   {
     "id": "en_gb_question",
@@ -312,6 +338,7 @@
     "synthesis": {
       "ok": true,
       "direction": null,
+      "direction_validation": null,
       "engine": "espeak",
       "engine_info": "ok",
       "sample_rate": 22050,
@@ -323,37 +350,49 @@
           "index": 0,
           "text": "You finished already?",
           "seconds": 1.302,
-          "synth_seconds": 0.009,
+          "synth_seconds": 0.008,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.41,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 0,
-          "samples": 28706
+          "samples": 28706,
+          "active_seconds": 0.988,
+          "speech_rate_chars_per_s": 18.22
         },
         {
           "index": 1,
           "text": "I thought we needed another hour.",
           "seconds": 1.79,
-          "synth_seconds": 0.01,
+          "synth_seconds": 0.008,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.05,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 28706,
-          "samples": 39461
+          "samples": 39461,
+          "active_seconds": 1.467,
+          "speech_rate_chars_per_s": 18.41
         },
         {
           "index": 2,
           "text": "Thank you, that changes everything.",
           "seconds": 2.348,
-          "synth_seconds": 0.01,
+          "synth_seconds": 0.009,
           "pause_after": "none",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -20.86,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 68167,
-          "samples": 51766
+          "samples": 51766,
+          "active_seconds": 1.756,
+          "speech_rate_chars_per_s": 16.51
         }
       ],
       "segment_count": 3,
@@ -508,23 +547,35 @@
         "voice": "locale default",
         "speakers": false,
         "rate": true,
+        "pause_override": true,
         "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
         "clone": false,
         "hardware": "CPU",
+        "timeout_seconds": 60.0,
         "dependencies": [
           "espeak-ng"
         ],
         "software_license": "GPL-3.0-or-later",
         "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
+        "resources": "no neural weights; executable hard timeout 60s"
       },
       "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "ac8db09e06c04249945d2f81575278a620c410d6fff3c89310565a8b6c4982be",
+        "resumed_segments": 0,
+        "synthesized_segments": 3
+      },
       "validation": {
         "human_listening": "not_performed",
         "asr": "not_performed"
       },
-      "synth_seconds": 0.029,
-      "rtf": 0.005,
+      "synth_seconds": 0.024,
+      "rtf": 0.004,
       "peak_dbfs": -2.3,
       "segment_rms_std_db": 0.782,
       "params": {
@@ -535,7 +586,8 @@
         "peak_limit_dbfs": -1.0,
         "lexicon_entries": 0,
         "processing": "minimal",
-        "max_output_seconds": 1800
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
       },
       "warnings": []
     },
@@ -599,7 +651,7 @@
         "detail": "静音区孤立尖峰数"
       }
     ],
-    "rtf": 0.005
+    "rtf": 0.004
   },
   {
     "id": "en_gb_question",
@@ -613,6 +665,7 @@
     "synthesis": {
       "ok": true,
       "direction": null,
+      "direction_validation": null,
       "engine": "espeak",
       "engine_info": "ok",
       "sample_rate": 22050,
@@ -624,37 +677,49 @@
           "index": 0,
           "text": "You finished already?",
           "seconds": 1.302,
-          "synth_seconds": 0.011,
+          "synth_seconds": 0.008,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.41,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 0,
-          "samples": 28706
+          "samples": 28706,
+          "active_seconds": 0.988,
+          "speech_rate_chars_per_s": 18.22
         },
         {
           "index": 1,
           "text": "I thought we needed another hour.",
           "seconds": 1.79,
-          "synth_seconds": 0.009,
+          "synth_seconds": 0.008,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.05,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 28706,
-          "samples": 39461
+          "samples": 39461,
+          "active_seconds": 1.467,
+          "speech_rate_chars_per_s": 18.41
         },
         {
           "index": 2,
           "text": "Thank you, that changes everything.",
           "seconds": 2.348,
-          "synth_seconds": 0.01,
+          "synth_seconds": 0.009,
           "pause_after": "none",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -20.86,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 68167,
-          "samples": 51766
+          "samples": 51766,
+          "active_seconds": 1.756,
+          "speech_rate_chars_per_s": 16.51
         }
       ],
       "segment_count": 3,
@@ -809,23 +874,35 @@
         "voice": "locale default",
         "speakers": false,
         "rate": true,
+        "pause_override": true,
         "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
         "clone": false,
         "hardware": "CPU",
+        "timeout_seconds": 60.0,
         "dependencies": [
           "espeak-ng"
         ],
         "software_license": "GPL-3.0-or-later",
         "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
+        "resources": "no neural weights; executable hard timeout 60s"
       },
       "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "ac8db09e06c04249945d2f81575278a620c410d6fff3c89310565a8b6c4982be",
+        "resumed_segments": 0,
+        "synthesized_segments": 3
+      },
       "validation": {
         "human_listening": "not_performed",
         "asr": "not_performed"
       },
-      "synth_seconds": 0.031,
-      "rtf": 0.006,
+      "synth_seconds": 0.024,
+      "rtf": 0.004,
       "peak_dbfs": -2.3,
       "segment_rms_std_db": 0.782,
       "params": {
@@ -836,7 +913,8 @@
         "peak_limit_dbfs": -1.0,
         "lexicon_entries": 0,
         "processing": "minimal",
-        "max_output_seconds": 1800
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
       },
       "warnings": []
     },
@@ -900,7 +978,7 @@
         "detail": "静音区孤立尖峰数"
       }
     ],
-    "rtf": 0.006
+    "rtf": 0.004
   },
   {
     "id": "en_gb_question",
@@ -914,6 +992,7 @@
     "synthesis": {
       "ok": true,
       "direction": null,
+      "direction_validation": null,
       "engine": "espeak",
       "engine_info": "ok",
       "sample_rate": 22050,
@@ -925,37 +1004,49 @@
           "index": 0,
           "text": "You finished already?",
           "seconds": 1.302,
-          "synth_seconds": 0.009,
+          "synth_seconds": 0.007,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.41,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 0,
-          "samples": 28706
+          "samples": 28706,
+          "active_seconds": 0.988,
+          "speech_rate_chars_per_s": 18.22
         },
         {
           "index": 1,
           "text": "I thought we needed another hour.",
           "seconds": 1.79,
-          "synth_seconds": 0.01,
+          "synth_seconds": 0.008,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.05,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 28706,
-          "samples": 39461
+          "samples": 39461,
+          "active_seconds": 1.467,
+          "speech_rate_chars_per_s": 18.41
         },
         {
           "index": 2,
           "text": "Thank you, that changes everything.",
           "seconds": 2.348,
-          "synth_seconds": 0.01,
+          "synth_seconds": 0.008,
           "pause_after": "none",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -20.86,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 68167,
-          "samples": 51766
+          "samples": 51766,
+          "active_seconds": 1.756,
+          "speech_rate_chars_per_s": 16.51
         }
       ],
       "segment_count": 3,
@@ -1110,17 +1201,356 @@
         "voice": "locale default",
         "speakers": false,
         "rate": true,
+        "pause_override": true,
         "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
         "clone": false,
         "hardware": "CPU",
+        "timeout_seconds": 60.0,
         "dependencies": [
           "espeak-ng"
         ],
         "software_license": "GPL-3.0-or-later",
         "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
+        "resources": "no neural weights; executable hard timeout 60s"
       },
       "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "ac8db09e06c04249945d2f81575278a620c410d6fff3c89310565a8b6c4982be",
+        "resumed_segments": 0,
+        "synthesized_segments": 3
+      },
+      "validation": {
+        "human_listening": "not_performed",
+        "asr": "not_performed"
+      },
+      "synth_seconds": 0.023,
+      "rtf": 0.004,
+      "peak_dbfs": -2.3,
+      "segment_rms_std_db": 0.782,
+      "params": {
+        "normalize": true,
+        "max_chars": 90,
+        "target_db": null,
+        "pause_ms": {},
+        "peak_limit_dbfs": -1.0,
+        "lexicon_entries": 0,
+        "processing": "minimal",
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
+      },
+      "warnings": []
+    },
+    "signal": [
+      {
+        "name": "format",
+        "status": "pass",
+        "value": {
+          "sr": 22050,
+          "channels": 1,
+          "subtype": "PCM_24"
+        },
+        "detail": ""
+      },
+      {
+        "name": "duration",
+        "status": "pass",
+        "value": 5.439,
+        "detail": ""
+      },
+      {
+        "name": "clipping",
+        "status": "pass",
+        "value": 0.0,
+        "detail": "削波采样比例"
+      },
+      {
+        "name": "peak",
+        "status": "pass",
+        "value": -2.3,
+        "detail": "峰值 dBFS"
+      },
+      {
+        "name": "dc_offset",
+        "status": "pass",
+        "value": 0.00051,
+        "detail": ""
+      },
+      {
+        "name": "active_signal_seconds",
+        "status": "info",
+        "value": 4.2104,
+        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
+      },
+      {
+        "name": "loudness_rms",
+        "status": "pass",
+        "value": -19.81,
+        "detail": "有声段 RMS dBFS，目标约 -20"
+      },
+      {
+        "name": "internal_silence",
+        "status": "pass",
+        "value": 0.31,
+        "detail": "最长内部静音（秒），起点 2.80s"
+      },
+      {
+        "name": "clicks_in_silence",
+        "status": "pass",
+        "value": 0,
+        "detail": "静音区孤立尖峰数"
+      }
+    ],
+    "rtf": 0.004
+  },
+  {
+    "id": "en_gb_question",
+    "category": "English intent contrast",
+    "arm": "norm",
+    "repeat": 2,
+    "source_text": "You finished already? I thought we needed another hour. Thank you, that changes everything.",
+    "language": "en-gb",
+    "wav": "validation/espeak-en-GB/en_gb_question.norm.r2.wav",
+    "sha256": "c5ef846298fc82bd41f40a04fb8c029a612f6579bb9cc2718dbdb9d6e645e2b9",
+    "synthesis": {
+      "ok": true,
+      "direction": null,
+      "direction_validation": null,
+      "engine": "espeak",
+      "engine_info": "ok",
+      "sample_rate": 22050,
+      "normalized": true,
+      "original_text": "You finished already? I thought we needed another hour. Thank you, that changes everything.",
+      "normalized_text": "You finished already? I thought we needed another hour. Thank you, that changes everything.",
+      "segments": [
+        {
+          "index": 0,
+          "text": "You finished already?",
+          "seconds": 1.302,
+          "synth_seconds": 0.008,
+          "pause_after": "sentence",
+          "pause_after_ms": 0.0,
+          "rms_dbfs": -19.41,
+          "attempts": 1,
+          "resumed_from_checkpoint": false,
+          "direction": {},
+          "start_sample": 0,
+          "samples": 28706,
+          "active_seconds": 0.988,
+          "speech_rate_chars_per_s": 18.22
+        },
+        {
+          "index": 1,
+          "text": "I thought we needed another hour.",
+          "seconds": 1.79,
+          "synth_seconds": 0.01,
+          "pause_after": "sentence",
+          "pause_after_ms": 0.0,
+          "rms_dbfs": -19.05,
+          "attempts": 1,
+          "resumed_from_checkpoint": false,
+          "direction": {},
+          "start_sample": 28706,
+          "samples": 39461,
+          "active_seconds": 1.467,
+          "speech_rate_chars_per_s": 18.41
+        },
+        {
+          "index": 2,
+          "text": "Thank you, that changes everything.",
+          "seconds": 2.348,
+          "synth_seconds": 0.012,
+          "pause_after": "none",
+          "pause_after_ms": 0.0,
+          "rms_dbfs": -20.86,
+          "attempts": 1,
+          "resumed_from_checkpoint": false,
+          "direction": {},
+          "start_sample": 68167,
+          "samples": 51766,
+          "active_seconds": 1.756,
+          "speech_rate_chars_per_s": 16.51
+        }
+      ],
+      "segment_count": 3,
+      "duration_seconds": 5.439,
+      "speech_seconds": 4.21,
+      "segment_audio_seconds": 5.44,
+      "language": "en-gb",
+      "capabilities": {
+        "languages": [
+          "af",
+          "am",
+          "an",
+          "ar",
+          "as",
+          "az",
+          "ba",
+          "be",
+          "bg",
+          "bn",
+          "bpy",
+          "bs",
+          "ca",
+          "ca-ba",
+          "ca-nw",
+          "ca-va",
+          "chr-US-Qaaa-x-west",
+          "cmn",
+          "cmn-latn-pinyin",
+          "cs",
+          "cv",
+          "cy",
+          "da",
+          "de",
+          "el",
+          "en-029",
+          "en-gb",
+          "en-gb-scotland",
+          "en-gb-x-gbclan",
+          "en-gb-x-gbcwmd",
+          "en-gb-x-rp",
+          "en-shaw",
+          "en-us",
+          "en-us-nyc",
+          "eo",
+          "es",
+          "es-419",
+          "et",
+          "eu",
+          "fa",
+          "fa-latn",
+          "fi",
+          "fo",
+          "fr-be",
+          "fr-ch",
+          "fr-fr",
+          "ga",
+          "gd",
+          "gn",
+          "grc",
+          "gu",
+          "hak",
+          "haw",
+          "he",
+          "hi",
+          "hr",
+          "ht",
+          "hu",
+          "hy",
+          "hyw",
+          "ia",
+          "id",
+          "io",
+          "is",
+          "it",
+          "ja",
+          "jbo",
+          "ka",
+          "kaa",
+          "kk",
+          "kl",
+          "kn",
+          "ko",
+          "kok",
+          "ku",
+          "ky",
+          "la",
+          "lb",
+          "lfn",
+          "lt",
+          "ltg",
+          "lv",
+          "mi",
+          "mk",
+          "ml",
+          "mr",
+          "ms",
+          "mt",
+          "mto",
+          "my",
+          "nb",
+          "nci",
+          "ne",
+          "nl",
+          "nog",
+          "om",
+          "or",
+          "pa",
+          "pap",
+          "piqd",
+          "pl",
+          "pt",
+          "pt-br",
+          "py",
+          "qdb",
+          "qu",
+          "quc",
+          "qya",
+          "ro",
+          "ru",
+          "ru-cl",
+          "ru-lv",
+          "sd",
+          "shn",
+          "si",
+          "sjn",
+          "sk",
+          "sl",
+          "smj",
+          "sq",
+          "sr",
+          "sv",
+          "sw",
+          "ta",
+          "te",
+          "th",
+          "ti",
+          "tk",
+          "tn",
+          "tr",
+          "tt",
+          "ug",
+          "uk",
+          "ur",
+          "uz",
+          "vi",
+          "vi-vn-x-central",
+          "vi-vn-x-south",
+          "xex",
+          "yue"
+        ],
+        "selected_language": "en-gb",
+        "voice": "locale default",
+        "speakers": false,
+        "rate": true,
+        "pause_override": true,
+        "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
+        "clone": false,
+        "hardware": "CPU",
+        "timeout_seconds": 60.0,
+        "dependencies": [
+          "espeak-ng"
+        ],
+        "software_license": "GPL-3.0-or-later",
+        "model_license": "bundled voice data: verify distribution",
+        "resources": "no neural weights; executable hard timeout 60s"
+      },
+      "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "ac8db09e06c04249945d2f81575278a620c410d6fff3c89310565a8b6c4982be",
+        "resumed_segments": 0,
+        "synthesized_segments": 3
+      },
       "validation": {
         "human_listening": "not_performed",
         "asr": "not_performed"
@@ -1137,7 +1567,8 @@
         "peak_limit_dbfs": -1.0,
         "lexicon_entries": 0,
         "processing": "minimal",
-        "max_output_seconds": 1800
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
       },
       "warnings": []
     },
@@ -1206,307 +1637,6 @@
   {
     "id": "en_gb_question",
     "category": "English intent contrast",
-    "arm": "norm",
-    "repeat": 2,
-    "source_text": "You finished already? I thought we needed another hour. Thank you, that changes everything.",
-    "language": "en-gb",
-    "wav": "validation/espeak-en-GB/en_gb_question.norm.r2.wav",
-    "sha256": "c5ef846298fc82bd41f40a04fb8c029a612f6579bb9cc2718dbdb9d6e645e2b9",
-    "synthesis": {
-      "ok": true,
-      "direction": null,
-      "engine": "espeak",
-      "engine_info": "ok",
-      "sample_rate": 22050,
-      "normalized": true,
-      "original_text": "You finished already? I thought we needed another hour. Thank you, that changes everything.",
-      "normalized_text": "You finished already? I thought we needed another hour. Thank you, that changes everything.",
-      "segments": [
-        {
-          "index": 0,
-          "text": "You finished already?",
-          "seconds": 1.302,
-          "synth_seconds": 0.009,
-          "pause_after": "sentence",
-          "rms_dbfs": -19.41,
-          "attempts": 1,
-          "direction": {},
-          "start_sample": 0,
-          "samples": 28706
-        },
-        {
-          "index": 1,
-          "text": "I thought we needed another hour.",
-          "seconds": 1.79,
-          "synth_seconds": 0.01,
-          "pause_after": "sentence",
-          "rms_dbfs": -19.05,
-          "attempts": 1,
-          "direction": {},
-          "start_sample": 28706,
-          "samples": 39461
-        },
-        {
-          "index": 2,
-          "text": "Thank you, that changes everything.",
-          "seconds": 2.348,
-          "synth_seconds": 0.012,
-          "pause_after": "none",
-          "rms_dbfs": -20.86,
-          "attempts": 1,
-          "direction": {},
-          "start_sample": 68167,
-          "samples": 51766
-        }
-      ],
-      "segment_count": 3,
-      "duration_seconds": 5.439,
-      "speech_seconds": 4.21,
-      "segment_audio_seconds": 5.44,
-      "language": "en-gb",
-      "capabilities": {
-        "languages": [
-          "af",
-          "am",
-          "an",
-          "ar",
-          "as",
-          "az",
-          "ba",
-          "be",
-          "bg",
-          "bn",
-          "bpy",
-          "bs",
-          "ca",
-          "ca-ba",
-          "ca-nw",
-          "ca-va",
-          "chr-US-Qaaa-x-west",
-          "cmn",
-          "cmn-latn-pinyin",
-          "cs",
-          "cv",
-          "cy",
-          "da",
-          "de",
-          "el",
-          "en-029",
-          "en-gb",
-          "en-gb-scotland",
-          "en-gb-x-gbclan",
-          "en-gb-x-gbcwmd",
-          "en-gb-x-rp",
-          "en-shaw",
-          "en-us",
-          "en-us-nyc",
-          "eo",
-          "es",
-          "es-419",
-          "et",
-          "eu",
-          "fa",
-          "fa-latn",
-          "fi",
-          "fo",
-          "fr-be",
-          "fr-ch",
-          "fr-fr",
-          "ga",
-          "gd",
-          "gn",
-          "grc",
-          "gu",
-          "hak",
-          "haw",
-          "he",
-          "hi",
-          "hr",
-          "ht",
-          "hu",
-          "hy",
-          "hyw",
-          "ia",
-          "id",
-          "io",
-          "is",
-          "it",
-          "ja",
-          "jbo",
-          "ka",
-          "kaa",
-          "kk",
-          "kl",
-          "kn",
-          "ko",
-          "kok",
-          "ku",
-          "ky",
-          "la",
-          "lb",
-          "lfn",
-          "lt",
-          "ltg",
-          "lv",
-          "mi",
-          "mk",
-          "ml",
-          "mr",
-          "ms",
-          "mt",
-          "mto",
-          "my",
-          "nb",
-          "nci",
-          "ne",
-          "nl",
-          "nog",
-          "om",
-          "or",
-          "pa",
-          "pap",
-          "piqd",
-          "pl",
-          "pt",
-          "pt-br",
-          "py",
-          "qdb",
-          "qu",
-          "quc",
-          "qya",
-          "ro",
-          "ru",
-          "ru-cl",
-          "ru-lv",
-          "sd",
-          "shn",
-          "si",
-          "sjn",
-          "sk",
-          "sl",
-          "smj",
-          "sq",
-          "sr",
-          "sv",
-          "sw",
-          "ta",
-          "te",
-          "th",
-          "ti",
-          "tk",
-          "tn",
-          "tr",
-          "tt",
-          "ug",
-          "uk",
-          "ur",
-          "uz",
-          "vi",
-          "vi-vn-x-central",
-          "vi-vn-x-south",
-          "xex",
-          "yue"
-        ],
-        "selected_language": "en-gb",
-        "voice": "locale default",
-        "speakers": false,
-        "rate": true,
-        "emotion": false,
-        "clone": false,
-        "hardware": "CPU",
-        "dependencies": [
-          "espeak-ng"
-        ],
-        "software_license": "GPL-3.0-or-later",
-        "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
-      },
-      "authorization": null,
-      "validation": {
-        "human_listening": "not_performed",
-        "asr": "not_performed"
-      },
-      "synth_seconds": 0.031,
-      "rtf": 0.006,
-      "peak_dbfs": -2.3,
-      "segment_rms_std_db": 0.782,
-      "params": {
-        "normalize": true,
-        "max_chars": 90,
-        "target_db": null,
-        "pause_ms": {},
-        "peak_limit_dbfs": -1.0,
-        "lexicon_entries": 0,
-        "processing": "minimal",
-        "max_output_seconds": 1800
-      },
-      "warnings": []
-    },
-    "signal": [
-      {
-        "name": "format",
-        "status": "pass",
-        "value": {
-          "sr": 22050,
-          "channels": 1,
-          "subtype": "PCM_24"
-        },
-        "detail": ""
-      },
-      {
-        "name": "duration",
-        "status": "pass",
-        "value": 5.439,
-        "detail": ""
-      },
-      {
-        "name": "clipping",
-        "status": "pass",
-        "value": 0.0,
-        "detail": "削波采样比例"
-      },
-      {
-        "name": "peak",
-        "status": "pass",
-        "value": -2.3,
-        "detail": "峰值 dBFS"
-      },
-      {
-        "name": "dc_offset",
-        "status": "pass",
-        "value": 0.00051,
-        "detail": ""
-      },
-      {
-        "name": "active_signal_seconds",
-        "status": "info",
-        "value": 4.2104,
-        "detail": "10ms RMS>-50dBFS；不是语音识别/VAD"
-      },
-      {
-        "name": "loudness_rms",
-        "status": "pass",
-        "value": -19.81,
-        "detail": "有声段 RMS dBFS，目标约 -20"
-      },
-      {
-        "name": "internal_silence",
-        "status": "pass",
-        "value": 0.31,
-        "detail": "最长内部静音（秒），起点 2.80s"
-      },
-      {
-        "name": "clicks_in_silence",
-        "status": "pass",
-        "value": 0,
-        "detail": "静音区孤立尖峰数"
-      }
-    ],
-    "rtf": 0.006
-  },
-  {
-    "id": "en_gb_question",
-    "category": "English intent contrast",
     "arm": "raw",
     "repeat": 2,
     "source_text": "You finished already? I thought we needed another hour. Thank you, that changes everything.",
@@ -1516,6 +1646,7 @@
     "synthesis": {
       "ok": true,
       "direction": null,
+      "direction_validation": null,
       "engine": "espeak",
       "engine_info": "ok",
       "sample_rate": 22050,
@@ -1527,13 +1658,17 @@
           "index": 0,
           "text": "You finished already?",
           "seconds": 1.302,
-          "synth_seconds": 0.009,
+          "synth_seconds": 0.01,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.41,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 0,
-          "samples": 28706
+          "samples": 28706,
+          "active_seconds": 0.988,
+          "speech_rate_chars_per_s": 18.22
         },
         {
           "index": 1,
@@ -1541,23 +1676,31 @@
           "seconds": 1.79,
           "synth_seconds": 0.01,
           "pause_after": "sentence",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -19.05,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 28706,
-          "samples": 39461
+          "samples": 39461,
+          "active_seconds": 1.467,
+          "speech_rate_chars_per_s": 18.41
         },
         {
           "index": 2,
           "text": "Thank you, that changes everything.",
           "seconds": 2.348,
-          "synth_seconds": 0.011,
+          "synth_seconds": 0.009,
           "pause_after": "none",
+          "pause_after_ms": 0.0,
           "rms_dbfs": -20.86,
           "attempts": 1,
+          "resumed_from_checkpoint": false,
           "direction": {},
           "start_sample": 68167,
-          "samples": 51766
+          "samples": 51766,
+          "active_seconds": 1.756,
+          "speech_rate_chars_per_s": 16.51
         }
       ],
       "segment_count": 3,
@@ -1712,23 +1855,35 @@
         "voice": "locale default",
         "speakers": false,
         "rate": true,
+        "pause_override": true,
         "emotion": false,
+        "emphasis": false,
+        "timbre_shift": false,
         "clone": false,
         "hardware": "CPU",
+        "timeout_seconds": 60.0,
         "dependencies": [
           "espeak-ng"
         ],
         "software_license": "GPL-3.0-or-later",
         "model_license": "bundled voice data: verify distribution",
-        "resources": "no neural weights; executable timeout 60s"
+        "resources": "no neural weights; executable hard timeout 60s"
       },
       "authorization": null,
+      "bound_assets": null,
+      "checkpoint_recovery": {
+        "enabled": false,
+        "checkpoint_dir": null,
+        "plan_sha256": "ac8db09e06c04249945d2f81575278a620c410d6fff3c89310565a8b6c4982be",
+        "resumed_segments": 0,
+        "synthesized_segments": 3
+      },
       "validation": {
         "human_listening": "not_performed",
         "asr": "not_performed"
       },
       "synth_seconds": 0.03,
-      "rtf": 0.006,
+      "rtf": 0.005,
       "peak_dbfs": -2.3,
       "segment_rms_std_db": 0.782,
       "params": {
@@ -1739,7 +1894,8 @@
         "peak_limit_dbfs": -1.0,
         "lexicon_entries": 0,
         "processing": "minimal",
-        "max_output_seconds": 1800
+        "max_output_seconds": 1800,
+        "segment_timeout": 60.0
       },
       "warnings": []
     },
@@ -1803,6 +1959,6 @@
         "detail": "静音区孤立尖峰数"
       }
     ],
-    "rtf": 0.006
+    "rtf": 0.005
   }
 ]

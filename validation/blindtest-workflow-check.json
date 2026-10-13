@@ -1,0 +1,13 @@
+{
+  "package": "validation/listening-unrated",
+  "isolated_map_outside_repo_pkg": true,
+  "private_map_exists_and_mode_0600": true,
+  "listen_samples_verified": 9,
+  "all_listen_samples_playable": true,
+  "unrated_score_rejected": true,
+  "unrated_unblind_rejected": true,
+  "fixture_score_and_unblind_succeeded": true,
+  "unblinded_sample_count": 9,
+  "human_listening_status": "not_performed",
+  "note": "Workflow mechanics (prepare -> listen verification -> score -> unblind) verified end-to-end in isolated temp workspace; validation/listening-unrated/ratings/ratings.csv remains strictly unrated."
+}

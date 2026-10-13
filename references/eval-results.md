@@ -1,45 +1,44 @@
-# 评测口径与当前证据
+# 评测口径与当前真实证据
 
-核心决策只在 SKILL.md。以下数字来自 validation/ 原始产物，不是人工听评。
+核心决策只在 SKILL.md。以下数字全部来自当前仓库 `validation/` 中的真实音频与原始 JSON 产物，不含任何编造的人工评分、克隆结果或统计显著性声称。
 
-## 历史结论纠正
-
-原版本的 CER/资源表未附原始 summary、音频或评员评分；同时声称“无人评”和“有效盲听偏好 xiao_ya”，互相矛盾。现撤回模型优先推荐、通用噪声下限/统计显著性与“人工可接受阈值”的确定性描述。历史文件可由基线 git 查阅，不把它们当本次证据。
-
-## 指标（统一代码、报告与文档）
+## 指标定义与边界（代码、报告与文档统一）
 
 | 指标 | 定义与边界 |
 |---|---|
-| active_signal_seconds / speech_seconds | 按实际采样率的约10ms帧RMS>-50dBFS的有效信号秒，末帧按真实长度；包括非语音声响，非语音VAD |
-| speech_rate_chars_per_s | 规范化后去标点、casefold字符数 / 有效信号秒；排除静音；无跨语言统一速度阈值 |
-| delivery_rate_chars_per_s | 同一字符数 / 成品总秒数（包括静音）；不能叫发声速度 |
-| segment_audio_seconds | 各段音频总秒数（包含模型内部静音），与旧speech_seconds的含义相同 |
-| loudness_rms / segment rms_dbfs | 同一帧活动掩码下信号RMS dBFS；不是LUFS或音色；各段值在最终整体衰减后测量 |
-| segment_rms_std_db | 最终各段活动RMS标准差，响度统计代理，不是音色/连续性验收；>1dB提示属启发式 |
-| asr_cer | 编辑距离 / 参考字符数，可>1；去标点与casefold。中文假定数词规范化、可选繁简转换；外语不套中文数词规则 |
-| asr_cer_text / asr_num_cer | 仅中文启发式遮蔽/提取数词后的诊断量，可能误遮蔽普通词/残留单字；不是独立真值或目标音色指标 |
-| RTF | 逐段合成耗时 / 成品总时长（含静音）；不是全流程冷启动耗时，不能代表音质 |
+| `active_signal_seconds` / `speech_seconds` | 10ms 帧 RMS > -50 dBFS 的有效信号秒，末帧按真实长度；包含非语音声响，非语音学 VAD |
+| `speech_rate_chars_per_s` | 规范化去标点、casefold 字符数 / 有效信号秒；不含静音；无跨语言统一阈值 |
+| `delivery_rate_chars_per_s` | 同一字符数 / 成品总秒数（含静音）；不等同发声速度 |
+| `segment_audio_seconds` | 各段音频总秒数（含模型自身尾部静音） |
+| `loudness_rms` / 段 `rms_dbfs` | 活动帧掩码下信号 RMS dBFS（整体峰值衰减后测量）；不是 LUFS 或音色一致性 |
+| `segment_rms_std_db` | 各段最终活动 RMS 标准差（>1 dB 提示属信号统计代理，不等于听感不连贯） |
+| `asr_cer` | 字符编辑距离 / 参考字符数（可 >1）；仅作回听诊断代理，受同音字、数字转写与专名偏差影响，不等同听感认证 |
+| `asr_cer_text` / `asr_num_cer` | 仅中文启发式遮蔽/提取数词后的诊断量；用于分离数词读法与普通文本偏差，非独立发音真值 |
 
-ASR 会写错专名、归一化数字、受语言设置影响。中文CER不能区分读法风格；外语文本保留数字时，读音正确但ASR拼成英文数词也可增大CER。warn/fail是未人评校准的工程阈值：default 0.10/0.25、strict 0.05/0.15，无统一显著性界限。strict也不是自然度标准。未启用ASR、依赖/模型不可用均须区别记录，skip不能视为通过。
+## 本次 Piper 中文 7 类重点场景重复评测
 
-## 本次重复评测
+模型：`zh_CN-huayan-medium.onnx`（SHA256 `9929917bf8cabb26fd528ea44d3a6699c11e87317a14765312420be230be0f3d`）+ `faster-whisper base`（int8 CPU）+ `assets/lexicon.example.tsv`。
+覆盖 7 类核心场景 × 2 手臂（`norm` 规范化+词典 vs `raw` 原文直送）× 3 重复（`seed=7`），共 **42 个真实 WAV 音频**，全部保留在 `validation/piper-repeat/`，完整原始记录见 `validation/piper-repeat/summary.json`。
 
-Piper huayan + whisper-base int8 CPU，3文本×2手臂×3重复，共18音频。手臂顺序按seed=7随机；norm含中文规范化与词典，raw直送原文，因此是联合干预，不是孤立词典或单条规则消融。每次原始信号/ASR文本与指标、输出哈希、模型/配置、代码哈希保留于 validation/piper-repeat/summary.json。
+| 用例 ID | 类别 | `norm` CER 均值 (范围) | `raw` CER 均值 (范围) | `norm` 文本/数词 CER | 声学与诊断解读 |
+|---|---|---:|---:|---:|---|
+| `zh_plain` | 中文准确性 | 0.1146 (0.0938–0.1562) | 0.1458 (0.1250–0.1562) | text 0.1146 / num None | 信号全通过；ASR 差异主要为同音字（“再→在”“合→核”） |
+| `digits_date` | 数字日期 | 0.0938 (0.0625–0.1250) | 0.2708 (0.2500–0.2812) | text 0.1755 / **num 0.0000** | `norm` 数词 CER 为 0；`raw` 将 2026 读作二千二十六、漏读冒号与小数点 |
+| `mixed_en` | 中英混合 | 0.3763 (0.3226–0.4516) | 0.4301 (0.4194–0.4516) | text 0.4286 / num 0.3333 | 两手臂均触发 ASR fail：单语中文模型直读英文失真，音译词（吉皮优/西皮优）被 ASR 写成同音字 |
+| `proper` | 专有名词 | 0.2933 (0.2800–0.3200) | 0.3067 (0.2400–0.4000) | text 0.2933 / num None | `raw` 将 Piper/OpenAI 读成乱码；`norm` 读出“派珀/欧朋艾艾”但被 ASR 记为同音字“拍扑/欧彭爱爱” |
+| `polyphone` | 多音字 | 0.0667 (0.0000–0.1000) | 0.0500 (0.0000–0.1500) | text 0.0667 / num None | “银行行长/重庆重要”在 `r0` 达 0.0 CER；复杂语境多音字仍须人耳核对 |
+| `zh_emotional_turn` | 叙事韵律 | 0.0595 (0.0357–0.0714) | 0.0714 (0.0714–0.0714) | text 0.0595 / num None | 低 CER 仅反映字面可懂度（“约定→月定”同音），不证明叙事韵律或情绪感染力 |
+| `zh_long` | 长文本段落 | 0.1867 (0.1733–0.2000) | 0.2044 (0.1600–0.2400) | text 0.1867 / num None | 4 句叙事长段信号无异常；ASR 同音字累积（“街道→借道”“安静→暗静”） |
 
-| 用例 | norm CER均值 | raw CER均值 | norm范围 |
-|---|---|---|---|
-| digits_date | 0.0834 | 0.2604 | 0.0625–0.0938 |
-| mixed_en | 0.3011 | 0.4839 | 0.2903–0.3226 |
-| zh_emotional_turn | 0.0714 | 0.0714 | 0.0714–0.0714 |
+42 个音频信号层 **0 fail / 0 warn**；ASR 诊断层共 **15 pass / 14 warn / 13 fail**（主要集中在 `mixed_en` 与 `proper`）。3 次重复与单模型样本不作统计显著性声称。
 
-18个文件信号层无fail/warn；ASR整体有7 fail与2 warn，其中mixed_en两手臂全部fail。数字日期样本的代理指标方向有利，但3重复、1模型、单ASR、未人评不支持总体效果/自然度结论。叙事转折低CER不代表情绪表达已实现。
+## 多语言 eSpeak、声音导演与长文本连续性实测
 
-eSpeak en-US/en-GB/de/ja各1文本×2手臂×3重复，共24文件信号层无fail/warn；en-US启用ASR，6次CER均0.125（全部warn），数字书写/读法不一致是可能原因，需人耳核对；其余3语言未做ASR。单元集成另有cmn真实信号检查。外语norm通常不改文本，两手臂作为零效应技术对照，不能宣称规范化收益。
+- **eSpeak NG 四语言重复评测**：`en-US`、`en-GB`、`de`、`ja` 各 1 用例 × 2 手臂 × 3 重复 = **24 个真实 WAV**（均保留在 `validation/espeak-*/`），信号层全部 0 fail / 0 warn。`en-US` 启用 `whisper-base` 回听，6 次 CER 均为 `0.125`（warn，因英文数字/日期书写与转写格式差异）。
+- **声音导演契约实测 (`validation/direction.json` / `direction-qa.json`)**：使用 `assets/direction.example.json` 执行完整五步链（`context` → `intent` → `audible_change` → `length_scale=1.3, pause_after_ms=450` → `direction_validation`），QA `direction_execution` 检查通过（`pass`），报告明确标注 `emotion`/`emphasis`/`timbre_modulation` 为 `unsupported`。
+- **长文本连续性 (`validation/long.wav` / `long.json` / `long-qa.json`)**：`zh_long_production`（1072 字符、64 段），成品总长 **201.805 秒**，有效信号 **177.766 秒**，合成耗时 **21.116 秒**（wall **23.225 秒**，RTF **0.105**），峰值 RSS **338.988 MiB**，段间活动 RMS 标准差 **1.043 dB**。信号层 0 fail / 0 warn；本次新增 `whisper-base` 全文回听诊断，`asr_cer = 0.2775`（因 16 段重复文本中“街道/蒸汽/牵着狗/安静”等同音字在长音频转写中累积）。
 
-长文本单次：1072字符（含空白标点）、64段、203.976秒，有效信号177.886秒；整体RTF 0.109、wall 25.76秒、峰值RSS 406.05MiB。QA无fail/warn；合成报告RMS标准差 1.033dB触发响度统计提示，不等于听感不连贯。没有ASR或人评；未覆盖10分钟以上真实长篇。
+## 隔离盲测包与未验证边界
 
-## 未验证与人评
-
-真实XTTS、目标音色保持、跨语言克隆漂移、GPU、专业自然度/表现力/连续性均未验证。validation/listening-unrated 有匿名实际样本与空记分表，无scores.json，不伪造评分。测试fixture中的数值只验证汇总逻辑，不是人评证据。
-
-复现命令见 README 与 validation/reproduce.sh；环境/依赖与ASR资产哈希见 validation/environment.json。部分工程测试与评测并行，RTF/RSS是环境样本，不能当严格基准。模型随机噪声意味着重新生成哈希与指标可能不同；哈希仅追踪本次文件。
+- `validation/listening-unrated/listen/` 保存 **9 个真实匿名试听 WAV（`A.wav`–`I.wav`，`seed=17`）**，覆盖上述 7 类核心中文场景与 norm/raw 对照；`validation/listening-unrated/ratings/ratings.csv` 为待人类评员填写的空表；密钥映射隔离在 `private/listening-blind-map.json`（`0600`，`.gitignore` 排除，不入库）。
+- 试听、评分、汇总与揭盲完整机制已通过隔离工作流实测（见 `validation/blindtest-workflow-check.json`）。真实人类主观听评、真实授权 XTTS 模型克隆与 GPU 加速仍属未验证项（`not_performed`）。

@@ -2,13 +2,19 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
+.cache/
+.local/
+.config/
+.bash_history
+.python_history
 out/
-# 音频产物不入库
+# 音频产物不入库（保留测试 fixture 与 validation 真实证据及盲听试听音频）
 *.wav
 *.flac
 *.ogg
 !tests/**/*.wav
-# 用户模型、授权原件与声纹资产不得提交
+!validation/**/*.wav
+# 用户模型、授权原件、声纹资产与盲测密钥映射不得提交
 *.onnx
 *.onnx.json
 *.pth
@@ -16,5 +22,7 @@ out/
 *.safetensors
 *.bin
 private/
+**/blind_map.json
 authorization*.json
 !assets/authorization.example.json
+.sudo_as_admin_successful

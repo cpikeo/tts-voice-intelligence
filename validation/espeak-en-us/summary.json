@@ -147,15 +147,19 @@
     "voice": "locale default",
     "speakers": false,
     "rate": true,
+    "pause_override": true,
     "emotion": false,
+    "emphasis": false,
+    "timbre_shift": false,
     "clone": false,
     "hardware": "CPU",
+    "timeout_seconds": 60.0,
     "dependencies": [
       "espeak-ng"
     ],
     "software_license": "GPL-3.0-or-later",
     "model_license": "bundled voice data: verify distribution",
-    "resources": "no neural weights; executable timeout 60s"
+    "resources": "no neural weights; executable hard timeout 60s"
   },
   "model": {
     "path": null,
@@ -170,8 +174,8 @@
   "asr_model": "base",
   "repeat": 3,
   "seed": 7,
-  "skill_version": "0.3.0",
-  "peak_rss_mb": 430.34375,
+  "skill_version": "0.4.0",
+  "peak_rss_mb": 430.67578125,
   "human_listening": "not_performed",
   "skipped": [
     {
@@ -253,29 +257,7 @@
       "category": "English dates/numbers",
       "norm": {
         "rtf": {
-          "mean": 0.0043,
-          "min": 0.003,
-          "max": 0.006,
-          "n": 3,
-          "std": 0.0015275252316519466
-        },
-        "cer": {
-          "mean": 0.125,
-          "min": 0.125,
-          "max": 0.125,
-          "n": 3,
-          "std": 0.0
-        },
-        "errors": [],
-        "asr_status": [
-          "warn",
-          "warn",
-          "warn"
-        ]
-      },
-      "raw": {
-        "rtf": {
-          "mean": 0.0037,
+          "mean": 0.0033,
           "min": 0.003,
           "max": 0.004,
           "n": 3,
@@ -288,6 +270,32 @@
           "n": 3,
           "std": 0.0
         },
+        "cer_text": null,
+        "num_cer": null,
+        "errors": [],
+        "asr_status": [
+          "warn",
+          "warn",
+          "warn"
+        ]
+      },
+      "raw": {
+        "rtf": {
+          "mean": 0.003,
+          "min": 0.003,
+          "max": 0.003,
+          "n": 3,
+          "std": 0.0
+        },
+        "cer": {
+          "mean": 0.125,
+          "min": 0.125,
+          "max": 0.125,
+          "n": 3,
+          "std": 0.0
+        },
+        "cer_text": null,
+        "num_cer": null,
         "errors": [],
         "asr_status": [
           "warn",
@@ -310,6 +318,7 @@
       "synthesis": {
         "ok": true,
         "direction": null,
+        "direction_validation": null,
         "engine": "espeak",
         "engine_info": "ok",
         "sample_rate": 22050,
@@ -321,37 +330,49 @@
             "index": 0,
             "text": "The meeting is on October 13, 2026 at 10:30.",
             "seconds": 4.415,
-            "synth_seconds": 0.031,
+            "synth_seconds": 0.015,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.6,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 0,
-            "samples": 97349
+            "samples": 97349,
+            "active_seconds": 3.602,
+            "speech_rate_chars_per_s": 9.16
           },
           {
             "index": 1,
             "text": "Revenue grew by 3.5 percent.",
             "seconds": 2.445,
-            "synth_seconds": 0.02,
+            "synth_seconds": 0.01,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.36,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 97349,
-            "samples": 53916
+            "samples": 53916,
+            "active_seconds": 1.995,
+            "speech_rate_chars_per_s": 11.03
           },
           {
             "index": 2,
             "text": "Order A-1024 is ready.",
             "seconds": 2.681,
-            "synth_seconds": 0.011,
+            "synth_seconds": 0.015,
             "pause_after": "none",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -18.9,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 151265,
-            "samples": 59119
+            "samples": 59119,
+            "active_seconds": 2.295,
+            "speech_rate_chars_per_s": 7.41
           }
         ],
         "segment_count": 3,
@@ -506,23 +527,35 @@
           "voice": "locale default",
           "speakers": false,
           "rate": true,
+          "pause_override": true,
           "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
           "clone": false,
           "hardware": "CPU",
+          "timeout_seconds": 60.0,
           "dependencies": [
             "espeak-ng"
           ],
           "software_license": "GPL-3.0-or-later",
           "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
+          "resources": "no neural weights; executable hard timeout 60s"
         },
         "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "8a17f98ee01bb4c3300b9ce86da2a623964084a70a41d364d162f303a1c62ebb",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
         "validation": {
           "human_listening": "not_performed",
           "asr": "not_performed"
         },
-        "synth_seconds": 0.062,
-        "rtf": 0.006,
+        "synth_seconds": 0.041,
+        "rtf": 0.004,
         "peak_dbfs": -2.03,
         "segment_rms_std_db": 0.751,
         "params": {
@@ -533,7 +566,8 @@
           "peak_limit_dbfs": -1.0,
           "lexicon_entries": 0,
           "processing": "minimal",
-          "max_output_seconds": 1800
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
         },
         "warnings": []
       },
@@ -597,7 +631,7 @@
           "detail": "静音区孤立尖峰数"
         }
       ],
-      "rtf": 0.006,
+      "rtf": 0.004,
       "asr": [
         {
           "name": "asr_cer",
@@ -624,6 +658,7 @@
       "synthesis": {
         "ok": true,
         "direction": null,
+        "direction_validation": null,
         "engine": "espeak",
         "engine_info": "ok",
         "sample_rate": 22050,
@@ -635,37 +670,49 @@
             "index": 0,
             "text": "The meeting is on October 13, 2026 at 10:30.",
             "seconds": 4.415,
-            "synth_seconds": 0.012,
+            "synth_seconds": 0.011,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.6,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 0,
-            "samples": 97349
+            "samples": 97349,
+            "active_seconds": 3.602,
+            "speech_rate_chars_per_s": 9.16
           },
           {
             "index": 1,
             "text": "Revenue grew by 3.5 percent.",
             "seconds": 2.445,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.009,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.36,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 97349,
-            "samples": 53916
+            "samples": 53916,
+            "active_seconds": 1.995,
+            "speech_rate_chars_per_s": 11.03
           },
           {
             "index": 2,
             "text": "Order A-1024 is ready.",
             "seconds": 2.681,
-            "synth_seconds": 0.011,
+            "synth_seconds": 0.009,
             "pause_after": "none",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -18.9,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 151265,
-            "samples": 59119
+            "samples": 59119,
+            "active_seconds": 2.295,
+            "speech_rate_chars_per_s": 7.41
           }
         ],
         "segment_count": 3,
@@ -820,22 +867,34 @@
           "voice": "locale default",
           "speakers": false,
           "rate": true,
+          "pause_override": true,
           "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
           "clone": false,
           "hardware": "CPU",
+          "timeout_seconds": 60.0,
           "dependencies": [
             "espeak-ng"
           ],
           "software_license": "GPL-3.0-or-later",
           "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
+          "resources": "no neural weights; executable hard timeout 60s"
         },
         "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "8a17f98ee01bb4c3300b9ce86da2a623964084a70a41d364d162f303a1c62ebb",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
         "validation": {
           "human_listening": "not_performed",
           "asr": "not_performed"
         },
-        "synth_seconds": 0.033,
+        "synth_seconds": 0.028,
         "rtf": 0.003,
         "peak_dbfs": -2.03,
         "segment_rms_std_db": 0.751,
@@ -847,7 +906,8 @@
           "peak_limit_dbfs": -1.0,
           "lexicon_entries": 0,
           "processing": "minimal",
-          "max_output_seconds": 1800
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
         },
         "warnings": []
       },
@@ -938,6 +998,7 @@
       "synthesis": {
         "ok": true,
         "direction": null,
+        "direction_validation": null,
         "engine": "espeak",
         "engine_info": "ok",
         "sample_rate": 22050,
@@ -949,37 +1010,49 @@
             "index": 0,
             "text": "The meeting is on October 13, 2026 at 10:30.",
             "seconds": 4.415,
-            "synth_seconds": 0.016,
+            "synth_seconds": 0.012,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.6,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 0,
-            "samples": 97349
+            "samples": 97349,
+            "active_seconds": 3.602,
+            "speech_rate_chars_per_s": 9.16
           },
           {
             "index": 1,
             "text": "Revenue grew by 3.5 percent.",
             "seconds": 2.445,
-            "synth_seconds": 0.011,
+            "synth_seconds": 0.009,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.36,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 97349,
-            "samples": 53916
+            "samples": 53916,
+            "active_seconds": 1.995,
+            "speech_rate_chars_per_s": 11.03
           },
           {
             "index": 2,
             "text": "Order A-1024 is ready.",
             "seconds": 2.681,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.009,
             "pause_after": "none",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -18.9,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 151265,
-            "samples": 59119
+            "samples": 59119,
+            "active_seconds": 2.295,
+            "speech_rate_chars_per_s": 7.41
           }
         ],
         "segment_count": 3,
@@ -1134,23 +1207,35 @@
           "voice": "locale default",
           "speakers": false,
           "rate": true,
+          "pause_override": true,
           "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
           "clone": false,
           "hardware": "CPU",
+          "timeout_seconds": 60.0,
           "dependencies": [
             "espeak-ng"
           ],
           "software_license": "GPL-3.0-or-later",
           "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
+          "resources": "no neural weights; executable hard timeout 60s"
         },
         "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "8a17f98ee01bb4c3300b9ce86da2a623964084a70a41d364d162f303a1c62ebb",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
         "validation": {
           "human_listening": "not_performed",
           "asr": "not_performed"
         },
-        "synth_seconds": 0.038,
-        "rtf": 0.004,
+        "synth_seconds": 0.03,
+        "rtf": 0.003,
         "peak_dbfs": -2.03,
         "segment_rms_std_db": 0.751,
         "params": {
@@ -1161,7 +1246,8 @@
           "peak_limit_dbfs": -1.0,
           "lexicon_entries": 0,
           "processing": "minimal",
-          "max_output_seconds": 1800
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
         },
         "warnings": []
       },
@@ -1225,7 +1311,7 @@
           "detail": "静音区孤立尖峰数"
         }
       ],
-      "rtf": 0.004,
+      "rtf": 0.003,
       "asr": [
         {
           "name": "asr_cer",
@@ -1252,6 +1338,7 @@
       "synthesis": {
         "ok": true,
         "direction": null,
+        "direction_validation": null,
         "engine": "espeak",
         "engine_info": "ok",
         "sample_rate": 22050,
@@ -1263,37 +1350,49 @@
             "index": 0,
             "text": "The meeting is on October 13, 2026 at 10:30.",
             "seconds": 4.415,
-            "synth_seconds": 0.012,
+            "synth_seconds": 0.01,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.6,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 0,
-            "samples": 97349
+            "samples": 97349,
+            "active_seconds": 3.602,
+            "speech_rate_chars_per_s": 9.16
           },
           {
             "index": 1,
             "text": "Revenue grew by 3.5 percent.",
             "seconds": 2.445,
-            "synth_seconds": 0.011,
+            "synth_seconds": 0.008,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.36,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 97349,
-            "samples": 53916
+            "samples": 53916,
+            "active_seconds": 1.995,
+            "speech_rate_chars_per_s": 11.03
           },
           {
             "index": 2,
             "text": "Order A-1024 is ready.",
             "seconds": 2.681,
-            "synth_seconds": 0.014,
+            "synth_seconds": 0.009,
             "pause_after": "none",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -18.9,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 151265,
-            "samples": 59119
+            "samples": 59119,
+            "active_seconds": 2.295,
+            "speech_rate_chars_per_s": 7.41
           }
         ],
         "segment_count": 3,
@@ -1448,23 +1547,35 @@
           "voice": "locale default",
           "speakers": false,
           "rate": true,
+          "pause_override": true,
           "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
           "clone": false,
           "hardware": "CPU",
+          "timeout_seconds": 60.0,
           "dependencies": [
             "espeak-ng"
           ],
           "software_license": "GPL-3.0-or-later",
           "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
+          "resources": "no neural weights; executable hard timeout 60s"
         },
         "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "8a17f98ee01bb4c3300b9ce86da2a623964084a70a41d364d162f303a1c62ebb",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
         "validation": {
           "human_listening": "not_performed",
           "asr": "not_performed"
         },
-        "synth_seconds": 0.037,
-        "rtf": 0.004,
+        "synth_seconds": 0.028,
+        "rtf": 0.003,
         "peak_dbfs": -2.03,
         "segment_rms_std_db": 0.751,
         "params": {
@@ -1475,7 +1586,8 @@
           "peak_limit_dbfs": -1.0,
           "lexicon_entries": 0,
           "processing": "minimal",
-          "max_output_seconds": 1800
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
         },
         "warnings": []
       },
@@ -1539,7 +1651,7 @@
           "detail": "静音区孤立尖峰数"
         }
       ],
-      "rtf": 0.004,
+      "rtf": 0.003,
       "asr": [
         {
           "name": "asr_cer",
@@ -1566,6 +1678,7 @@
       "synthesis": {
         "ok": true,
         "direction": null,
+        "direction_validation": null,
         "engine": "espeak",
         "engine_info": "ok",
         "sample_rate": 22050,
@@ -1577,37 +1690,49 @@
             "index": 0,
             "text": "The meeting is on October 13, 2026 at 10:30.",
             "seconds": 4.415,
-            "synth_seconds": 0.012,
+            "synth_seconds": 0.01,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.6,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 0,
-            "samples": 97349
+            "samples": 97349,
+            "active_seconds": 3.602,
+            "speech_rate_chars_per_s": 9.16
           },
           {
             "index": 1,
             "text": "Revenue grew by 3.5 percent.",
             "seconds": 2.445,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.008,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.36,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 97349,
-            "samples": 53916
+            "samples": 53916,
+            "active_seconds": 1.995,
+            "speech_rate_chars_per_s": 11.03
           },
           {
             "index": 2,
             "text": "Order A-1024 is ready.",
             "seconds": 2.681,
-            "synth_seconds": 0.01,
+            "synth_seconds": 0.009,
             "pause_after": "none",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -18.9,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 151265,
-            "samples": 59119
+            "samples": 59119,
+            "active_seconds": 2.295,
+            "speech_rate_chars_per_s": 7.41
           }
         ],
         "segment_count": 3,
@@ -1762,22 +1887,34 @@
           "voice": "locale default",
           "speakers": false,
           "rate": true,
+          "pause_override": true,
           "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
           "clone": false,
           "hardware": "CPU",
+          "timeout_seconds": 60.0,
           "dependencies": [
             "espeak-ng"
           ],
           "software_license": "GPL-3.0-or-later",
           "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
+          "resources": "no neural weights; executable hard timeout 60s"
         },
         "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "8a17f98ee01bb4c3300b9ce86da2a623964084a70a41d364d162f303a1c62ebb",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
         "validation": {
           "human_listening": "not_performed",
           "asr": "not_performed"
         },
-        "synth_seconds": 0.033,
+        "synth_seconds": 0.028,
         "rtf": 0.003,
         "peak_dbfs": -2.03,
         "segment_rms_std_db": 0.751,
@@ -1789,7 +1926,8 @@
           "peak_limit_dbfs": -1.0,
           "lexicon_entries": 0,
           "processing": "minimal",
-          "max_output_seconds": 1800
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
         },
         "warnings": []
       },
@@ -1880,6 +2018,7 @@
       "synthesis": {
         "ok": true,
         "direction": null,
+        "direction_validation": null,
         "engine": "espeak",
         "engine_info": "ok",
         "sample_rate": 22050,
@@ -1891,37 +2030,49 @@
             "index": 0,
             "text": "The meeting is on October 13, 2026 at 10:30.",
             "seconds": 4.415,
-            "synth_seconds": 0.013,
+            "synth_seconds": 0.01,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.6,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 0,
-            "samples": 97349
+            "samples": 97349,
+            "active_seconds": 3.602,
+            "speech_rate_chars_per_s": 9.16
           },
           {
             "index": 1,
             "text": "Revenue grew by 3.5 percent.",
             "seconds": 2.445,
-            "synth_seconds": 0.011,
+            "synth_seconds": 0.008,
             "pause_after": "sentence",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -20.36,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 97349,
-            "samples": 53916
+            "samples": 53916,
+            "active_seconds": 1.995,
+            "speech_rate_chars_per_s": 11.03
           },
           {
             "index": 2,
             "text": "Order A-1024 is ready.",
             "seconds": 2.681,
-            "synth_seconds": 0.012,
+            "synth_seconds": 0.008,
             "pause_after": "none",
+            "pause_after_ms": 0.0,
             "rms_dbfs": -18.9,
             "attempts": 1,
+            "resumed_from_checkpoint": false,
             "direction": {},
             "start_sample": 151265,
-            "samples": 59119
+            "samples": 59119,
+            "active_seconds": 2.295,
+            "speech_rate_chars_per_s": 7.41
           }
         ],
         "segment_count": 3,
@@ -2076,23 +2227,35 @@
           "voice": "locale default",
           "speakers": false,
           "rate": true,
+          "pause_override": true,
           "emotion": false,
+          "emphasis": false,
+          "timbre_shift": false,
           "clone": false,
           "hardware": "CPU",
+          "timeout_seconds": 60.0,
           "dependencies": [
             "espeak-ng"
           ],
           "software_license": "GPL-3.0-or-later",
           "model_license": "bundled voice data: verify distribution",
-          "resources": "no neural weights; executable timeout 60s"
+          "resources": "no neural weights; executable hard timeout 60s"
         },
         "authorization": null,
+        "bound_assets": null,
+        "checkpoint_recovery": {
+          "enabled": false,
+          "checkpoint_dir": null,
+          "plan_sha256": "8a17f98ee01bb4c3300b9ce86da2a623964084a70a41d364d162f303a1c62ebb",
+          "resumed_segments": 0,
+          "synthesized_segments": 3
+        },
         "validation": {
           "human_listening": "not_performed",
           "asr": "not_performed"
         },
-        "synth_seconds": 0.036,
-        "rtf": 0.004,
+        "synth_seconds": 0.026,
+        "rtf": 0.003,
         "peak_dbfs": -2.03,
         "segment_rms_std_db": 0.751,
         "params": {
@@ -2103,7 +2266,8 @@
           "peak_limit_dbfs": -1.0,
           "lexicon_entries": 0,
           "processing": "minimal",
-          "max_output_seconds": 1800
+          "max_output_seconds": 1800,
+          "segment_timeout": 60.0
         },
         "warnings": []
       },
@@ -2167,7 +2331,7 @@
           "detail": "静音区孤立尖峰数"
         }
       ],
-      "rtf": 0.004,
+      "rtf": 0.003,
       "asr": [
         {
           "name": "asr_cer",
@@ -2185,12 +2349,12 @@
   ],
   "evidence_type": "current_objective_run",
   "source_sha256": {
-    "scripts/blindtest.py": "1ce327a084b55fb1617ca57ead3cb132bfd061f32c9c7af9a24ea466b92875fa",
-    "scripts/engines.py": "f9bcd0ec6d3d42fe662512755794784e89375b943a8c358eeea688ecd828bbe9",
-    "scripts/qa.py": "1ac42000e26ab316aacb2b01618fb7ed8c507bf8a630747bb7d8d005d3f5d557",
-    "scripts/textnorm.py": "15ad3f6737fdf31c587b98f2ea86e0a913e236851407777ca5407d1b1a4b74ae",
-    "scripts/tts.py": "22bddc248cdc70539f83dab64cea8d0524500390d01aed99a2ab97e58b040bde",
+    "scripts/blindtest.py": "129a0ee704c762f28aef59eb8b039ae286e6f598571097fb33b3421fb9449fb4",
+    "scripts/engines.py": "07e340f61d6db77bd297aadee7199c2e5b11e48be9b99bfdb8cd97b6fd4c60e2",
+    "scripts/qa.py": "19c2e4a611c05f40c685fa9b0a90e772c812b93047b793a21816f7d1e4628272",
+    "scripts/textnorm.py": "37944582a8787fbe39306f6797a885810353fd574bad7e7a241354be671178fa",
+    "scripts/tts.py": "eb3748fbcaae8db3a04fa1ef9142022a0a85a37a3c656beb2324d3271fcdc396",
     "tests/cases.jsonl": "266e60ef8504c64b1f141204e33a94e15dd1ba7d0b669a9dc2186ceeb215501c",
-    "tests/run_eval.py": "c0f59e7127ef271c7cecbaf9187dc6b5c837ea26cb7337b5c94123069716dc00"
+    "tests/run_eval.py": "6df5f9b0ad61dd3b7eae313f8b32c69aa8688de6d5ed6994cb28c627c853a260"
   }
 }
